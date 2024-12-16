@@ -182,6 +182,11 @@ if __name__ == "__main__":
     parser.add_argument('--cutoff', type=float)
     parser.add_argument('--niter', type=int, default=110000)
     parser.add_argument('--prot', type=str, default=None, nargs='?')
+    parser.add_argument('--label-cutoff', type=float, default=3,
+            dest='label_cutoff',
+            help='Only label residues with tau > '
+            'LABEL-CUTOFF * <tau>. ')
+
     parser.add_argument('--structure', type=str, nargs='?')
     args = parser.parse_args()
 
@@ -189,4 +194,4 @@ if __name__ == "__main__":
     pp.reprocess(nproc=args.nproc)
     pp.collect_results()
     pp.write_data()
-    pp.plot_protein()
+    pp.plot_protein(label_cutoff=args.label_cutoff)
