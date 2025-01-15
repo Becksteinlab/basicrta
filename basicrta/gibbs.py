@@ -131,14 +131,14 @@ class Gibbs(object):
     """
 
     def __init__(self, times=None, residue=None, loc=0, ncomp=15, niter=110000,
-                 cutoff=None):
+                 cutoff=None, g=100, burnin=10000):
         self.times = times
         self.residue = residue
         self.niter = niter
         self.loc = loc
         self.ncomp = ncomp
-        self.g = 100
-        self.burnin = 10000
+        self.g = g
+        self.burnin = burnin
         self.cutoff = cutoff
         self.processed_results = Results()
         self._noise_cutoff = 0.4
