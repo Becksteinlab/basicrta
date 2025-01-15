@@ -48,11 +48,11 @@ class MapContacts(object):
     :type nslices: int, optional
     """
 
-    def __init__(self, u, ag1, ag2, nproc=1, frames=None, cutoff=10.0,
+    def __init__(self, u, ag1, ag2, nproc=1, frames=None, max_cutoff=10.0,
                  nslices=100):
         self.u, self.nproc = u, nproc
         self.ag1, self.ag2 = ag1, ag2
-        self.cutoff, self.frames, self.nslices = cutoff, frames, nslices
+        self.cutoff, self.frames, self.nslices = max_cutoff, frames, nslices
 
     def run(self):
         """Run contact analysis and save to `contacts.pkl`
@@ -81,7 +81,7 @@ class MapContacts(object):
                                    'traj': self.u.trajectory.filename,
                                    'ag1': self.ag1, 'ag2': self.ag2,
                                    'ts': self.u.trajectory.dt/1000,
-                                   'cutoff': self.cutoff})
+                                   'cutoff': self.max_cutoff})
 
         contact_map = np.memmap('.tmpmap', mode='w+',
                                 shape=(mapsize, 5), dtype=dtype)
@@ -160,6 +160,7 @@ class ProcessContacts(object):
                 memmap = pickle.load(f)
             # memmap = np.load(self.map_name, mmap_mode='r')
             dtype = memmap.dtype
+
             memmap = memmap[memmap[:, -2] <= self.cutoff]
         else:
             raise FileNotFoundError(f'{self.map_name} not found. Specify the '
@@ -232,9 +233,13 @@ class ProcessContacts(object):
 
 
 if __name__ == '__main__':
+    """DOCSSS
+    """
     import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--top', type=str)
+    parser = argparse.ArgumentParser(description="Create the primary contact \
+                                     map and collect contacts based on the \
+                                     desired cutoff distance")
+    parser.add_argument('--top', type=str, help="Topology")
     parser.add_argument('--traj', type=str)
     parser.add_argument('--sel1', type=str)
     parser.add_argument('--sel2', type=str)
