@@ -131,7 +131,7 @@ class Gibbs(object):
     """
 
     def __init__(self, times=None, residue=None, loc=0, ncomp=15, niter=110000,
-                 cutoff=None, g=100, burnin=10000):
+                 cutoff=None, g=50, burnin=10000):
         self.times = times
         self.residue = residue
         self.niter = niter
