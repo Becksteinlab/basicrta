@@ -1,7 +1,12 @@
 from glob import glob                                    
 import numpy as np
 import os                                                
+import sys
 
+if len(sys.argv) < 2:
+    sys.exit('Provide cutoff')
+
+cutoff = sys.argv[1]
 bashCommand = "sacct -n -X --format jobname,jobid -s RUNNING > .running_jobs.txt"
 os.system(bashCommand)
 
@@ -10,7 +15,7 @@ with open('.running_jobs.txt', 'r') as f:
     for line in f:
         running.append(line.strip().split()[0])
 
-os.chdir('basicrta-7.0/')
+os.chdir(f'basicrta-{cutoff}/')
 dirs = np.array(glob('?[0-9]*'))
 
 if len(running) > 0:
@@ -28,7 +33,7 @@ for adir in dirs:
         rerundirs.append(adir)
 
 rerunids = [adir for adir in rerundirs]
-with open('../rerun_residues.csv', 'w') as w:
+with open(f'../rerun_residues_{cutoff}.csv', 'w') as w:
     for res in rerunids:
         w.write(f'{res},') 
 
