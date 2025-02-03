@@ -5,7 +5,7 @@ from tqdm import tqdm
 from multiprocessing import Pool, Lock
 import MDAnalysis as mda
 from basicrta import istarmap
-
+from basicrta.gibbs import Gibbs
 gc.enable()
 
 

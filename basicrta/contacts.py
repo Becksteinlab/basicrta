@@ -207,5 +207,7 @@ if __name__ == '__main__':
     ag1 = u.select_atoms(args.sel1)
     ag2 = u.select_atoms(args.sel2)
 
-    MapContacts(u, ag1, ag2, nproc=nproc, nslices=nslices).run()
+    if not os.path.exists('contacts.pkl'):
+        MapContacts(u, ag1, ag2, nproc=nproc, nslices=nslices).run()
+
     ProcessContacts(cutoff, nproc).run()
