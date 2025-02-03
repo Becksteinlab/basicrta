@@ -39,7 +39,7 @@ class ParallelGibbs(object):
         self.ncomp = ncomp
         self.contacts = contacts
 
-    def run(self, run_resids=None):
+    def run(self, run_resids=None, g=100):
         """
         The :meth:`run` method executes the Gibbs samplers for all residues of
         `sel1` present in the contact map, or a list of resids can be provided.
@@ -71,7 +71,7 @@ class ParallelGibbs(object):
                          run_resids])
         residues = residues[inds]
         input_list = [[residues[i], times[i].copy(), i % self.nproc,
-                       self.ncomp, self.niter, self.cutoff] for i in
+                       self.ncomp, self.niter, self.cutoff, g] for i in
                       range(len(residues))]
 
         del contacts, times
@@ -218,7 +218,7 @@ class Gibbs(object):
 
         self.save()
 
-    def cluster(self, method="GaussianMixture", **kwargs):
+    def cluster(self, method="GaussianMixture", g=self.g, **kwargs):
         r"""
         Cluster the processed results using the methods available in
         :class:`sklearn.mixture`
@@ -230,7 +230,7 @@ class Gibbs(object):
         from scipy import stats
 
         clu = getattr(mixture, method)
-        burnin_ind = self.burnin // self.g
+        burnin_ind = self.burnin // g
         data_len = len(self.times)
         wcutoff = 10 / data_len
 
@@ -256,7 +256,7 @@ class Gibbs(object):
         r.fit(np.log(train_data))
         all_labels = r.predict(np.log(data))
 
-        if self.indicator is not None:
+        if (self.indicator is not None) and g==self.g:
             indicator = self.indicator[burnin_ind:]
         else:
             indicator = self._sample_indicator()
@@ -272,7 +272,7 @@ class Gibbs(object):
         setattr(self.processed_results, 'indicator', pindicator)
         setattr(self.processed_results, 'labels', all_labels)
 
-    def process_gibbs(self):
+    def process_gibbs(self, g=self.g):
         r"""
         Process the samples collected from the Gibbs sampler.
         :meth:`process_gibbs` can be called multiple times to check the
@@ -283,10 +283,10 @@ class Gibbs(object):
 
         data_len = len(self.times)
         wcutoff = 10/data_len
-        burnin_ind = self.burnin//self.g
+        burnin_ind = self.burnin//g
         inds = np.where(self.mcweights[burnin_ind:] > wcutoff)
-        indices = (np.arange(self.burnin, self.niter + 1, self.g)[inds[0]] //
-                   self.g)
+        indices = (np.arange(self.burnin, self.niter + 1, g)[inds[0]] //
+                   g)
         weights, rates = self.mcweights[burnin_ind:], self.mcrates[burnin_ind:]
         fweights, frates = weights[inds], rates[inds]
 
@@ -318,10 +318,10 @@ class Gibbs(object):
         from basicrta.util import mixture_and_plot
         mixture_and_plot(self, remove_noise=remove_noise, **kwargs)
 
-    def _sample_indicator(self):
-        indicator = np.zeros(((self.niter+1)//self.g, self.times.shape[0]),
+    def _sample_indicator(self, g=self.g):
+        indicator = np.zeros(((self.niter+1)//g, self.times.shape[0]),
                              dtype=np.uint8)
-        burnin_ind = self.burnin//self.g
+        burnin_ind = self.burnin//g
         for i, (w, r) in enumerate(zip(self.mcweights, self.mcrates)):
             # compute probabilities
             probs = w*r*np.exp(np.outer(-r, self.times)).T
