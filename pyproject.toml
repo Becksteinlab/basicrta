@@ -35,7 +35,7 @@ dynamic = [
 
 [project.optional-dependencies]
 test = [
-    "pytest>=6.0",
+    "pytest>=8.0",
     "pytest-xdist>=2.5",
     "pytest-cov>=3.0",
 ]
@@ -44,18 +44,15 @@ doc = [
     "sphinx_rtd_theme",
 ]
 
-# [project.urls]
-# source = "https://github.com/rsexton2/basicrta"
-# documentation = "https://basicrta.readthedocs.io"
+[project.urls]
+source = "https://github.com/becksteinlab/basicrta"
+documentation = "https://basicrta.readthedocs.io"
 
 [tool.setuptools]
 py-modules = []
 
-[tool.pytest.ini_options]
-minversion = "6.0"
-testpaths = [
-    "basicrta/tests",
-]
+[tool.setuptools.packages]
+find = {}
 
 [tool.black]
 line-length = 80

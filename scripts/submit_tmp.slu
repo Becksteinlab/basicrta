@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#SBATCH -J RESIDUE
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --mem=20G
+#SBATCH -o basicrta-7.0/RESIDUE/slurm_%j.out
+#SBATCH -t 1-12:00:00
+#SBATCH -p general
+#SBATCH -q public
+#SBATCH --cpus-per-task=1
+
+python -m basicrta.gibbs --contacts contacts_7.0.pkl --resid RESID 
+

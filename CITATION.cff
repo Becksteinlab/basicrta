@@ -1,0 +1,24 @@
+title: "Bayesian nonparametric analysis of residence times for protein-lipid interactions in Molecular Dynamics simulations"
+abstract:  "Molecular Dynamics (MD) simulations are a versatile tool to investigate the interactions of proteins within their environments, in particular of membrane proteins with the surrounding lipids. However, quantitative analysis of lipid-protein binding kinetics has remained challenging due to considerable noise and low frequency of long binding events, even in hundreds of microseconds of simulation data. Here we apply Bayesian nonparametrics to compute residueresolved residence time distributions from MD trajectories. Such an analysis characterizes binding processes at different timescales (quantified by their kinetic off-rate) and assigns to each trajectory frame a probability of belonging to a specific process. In this way, we classify trajectory frames in an unsupervised manner and obtain, for example, different binding poses or molecular densities based on the timescale of the process. We demonstrate our approach by characterizing interactions of cholesterol with six different G-protein coupled receptors (A2AAR, β2AR, CB1R, CB2R, CCK1R, CCK2R) simulated with coarse-grained MD simulations with the MARTINI model. The nonparametric Bayesian analysis allows us to connect the coarse binding time series data to the underlying molecular picture and, thus, not only infers accurate binding kinetics with error distributions from MD simulations but also describes molecular events responsible for the broad range of kinetic rates."
+type: "preprint"
+license: "http://creativecommons.org/licenses/by/4.0/"
+copyright: "http://creativecommons.org/licenses/by/4.0/"
+database: "Biophysics"
+date-accessed: 2024-11-15T02:48:23Z
+languages: "en"
+url: "http://biorxiv.org/lookup/doi/10.1101/2024.11.07.622502"
+authors: 
+  - family-names: "Sexton"
+    given-names: "Ricky"
+  - family-names: "Fazel"
+    given-names: "Mohamadreza"
+  - family-names: "Schweiger"
+    given-names: "Maxwell"
+  - family-names: "Pressé"
+    given-names: "Steve"
+  - family-names: "Beckstein"
+    given-names: "Oliver"
+date-published: 2024-11-09
+identifiers: 
+  - type: doi
+    value: 10.1101/2024.11.07.622502

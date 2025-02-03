@@ -210,15 +210,15 @@ class WDensityAnalysis(AnalysisBase):
             try:
                 smin = np.min(coord, axis=0)
                 smax = np.max(coord, axis=0)
-            except ValueError as err:
+            except ValueError:
                 msg = ("No atoms in AtomGroup at input time frame. "
                        "This may be intended; please ensure that "
                        "your grid selection covers the atomic "
                        "positions you wish to capture.")
                 warnings.warn(msg)
                 logger.warning(msg)
-                smin = self._gridcenter     #assigns limits to be later -
-                smax = self._gridcenter     #overwritten by _set_user_grid
+                smin = self._gridcenter     # assigns limits to be later -
+                smax = self._gridcenter     # overwritten by _set_user_grid
             # Overwrite smin/smax with user defined values
             smin, smax = self._set_user_grid(self._gridcenter, self._xdim,
                                              self._ydim, self._zdim, smin,
@@ -328,7 +328,6 @@ class WDensityAnalysis(AnalysisBase):
             raise ValueError("xdim, ydim, and zdim must be numbers") from err
         if any(np.isnan(gridcenter)) or any(np.isnan(xyzdim)):
             raise ValueError("Gridcenter or grid dimensions have NaN element")
-
 
         # Set min/max by shifting by half the edge length of each dimension
         umin = gridcenter - xyzdim/2
@@ -471,8 +470,8 @@ class Density(Grid):
         length_unit = 'Angstrom'
 
         parameters = kwargs.pop('parameters', {})
-        if (len(args) > 0 and isinstance(args[0], str) or
-            isinstance(kwargs.get('grid', None), str)):
+        if (len(args) > 0 and isinstance(args[0], str) or 
+           isinstance(kwargs.get('grid', None), str)):
             # try to be smart: when reading from a file then it is likely that
             # this is a density
             parameters.setdefault('isDensity', True)
@@ -627,4 +626,3 @@ class Density(Grid):
         else:
             grid_type = 'histogram'
         return '<Density ' + grid_type + ' with ' + str(self.grid.shape) + ' bins>'
-

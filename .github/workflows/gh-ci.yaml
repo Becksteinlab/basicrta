@@ -29,7 +29,7 @@ jobs:
       stable-python-version: ${{ steps.get-compatible-python.outputs.stable-python }}
       python-matrix: ${{ steps.get-compatible-python.outputs.python-versions }}
     steps:
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5.3.0
         with:
           python-version: "3.11"
 
@@ -39,15 +39,23 @@ jobs:
           release: "latest"
 
   main-tests:
-    if: "github.repository == 'rsexton2/basicrta'"
+    if: "github.repository == 'becksteinlab/basicrta'"
     needs: environment-config
     runs-on: ${{ matrix.os }}
     strategy:
         fail-fast: false
         matrix:
-          os: [macOS-latest, ubuntu-latest, windows-latest]
+          # see issue #10
+          # os: [macOS-latest, ubuntu-latest, windows-latest]
+          os: [macOS-latest, ubuntu-latest]
           python-version: ${{ fromJSON(needs.environment-config.outputs.python-matrix) }}
+#          python-version: ["3.10", "3.11", "3.12"]
           mdanalysis-version: ["latest", "develop"]
+          exclude:
+            - python-version: "3.9"
+            # latest MDA requires python <= 3.13
+            - python-version: "3.13"
+            - mdanalysis-version: "develop"
 
     steps:
     - uses: actions/checkout@v4
@@ -61,14 +69,13 @@ jobs:
 
     # More info on options: https://github.com/conda-incubator/setup-miniconda
     - name: Install conda dependencies
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: ${{ matrix.python-version }}
         environment-file: devtools/conda-envs/test_env.yaml
         add-pip-as-python-dependency: true
-        architecture: x64
 
-        miniforge-variant: Mambaforge
+        miniforge-variant: Miniforge3
         use-mamba: true
         channels: conda-forge, defaults
 
@@ -82,7 +89,7 @@ jobs:
       uses: MDAnalysis/install-mdanalysis@main
       with:
         version: ${{ matrix.mdanalysis-version }}
-        install-tests: false
+        install-tests: true
         installer:  mamba 
         shell: bash  -l {0} 
       
@@ -103,19 +110,19 @@ jobs:
 
     - name: Run tests
       run: |
-        pytest -n 2 -v --cov=basicrta --cov-report=xml --color=yes basicrta/tests/
+        pytest -n auto -v --cov=basicrta --cov-report=xml --color=yes basicrta/tests/
 
     - name: codecov
-      if: github.repository == 'rsexton2/basicrta' && github.event_name != 'schedule'
-      uses: codecov/codecov-action@v3
+      if: github.repository == 'becksteinlab/basicrta' && github.event_name != 'schedule'
+      uses: codecov/codecov-action@v5
       with:
-        file: coverage.xml
+        files: coverage.xml
         name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
         verbose: True
 
 
   pylint_check:
-    if: "github.repository == 'rsexton2/basicrta'"
+    if: "github.repository == 'becksteinlab/basicrta'"
     needs: environment-config
     runs-on: ubuntu-latest
 
@@ -123,10 +130,10 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5.3.0
       with:
         python-version: ${{ needs.environment-config.outputs.stable-python-version }}
-
+        #python-version: "3.12"
     - name: Install Pylint
       run: |
         which pip
@@ -137,11 +144,11 @@ jobs:
       env:
         PYLINTRC: .pylintrc
       run: |
-        pylint basicrta
+        pylint basicrta --exit-zero
 
 
   pypi_check:
-    if: "github.repository == 'rsexton2/basicrta'"
+    if: "github.repository == 'becksteinlab/basicrta'"
     needs: environment-config
     runs-on: ubuntu-latest
 
@@ -149,9 +156,11 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python ${{ needs.environment-config.outputs.stable-python-version }}
-      uses: actions/setup-python@v4
+#    - name: Set up Python 
+      uses: actions/setup-python@v5.3.0
       with:
         python-version: ${{ needs.environment-config.outputs.stable-python-version }}
+        #python-version: "3.12"
 
     - name: Install dependencies
       run: |

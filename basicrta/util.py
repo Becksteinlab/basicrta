@@ -1,20 +1,23 @@
 """Functions used by other modules."""
 
-from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
-                               AutoMinorLocator)
+from matplotlib.ticker import MultipleLocator
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
-import ast, multiprocessing, os
+from glob import glob
+from tqdm import tqdm
+import ast
+import multiprocessing
+import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import pickle, bz2
-from glob import glob
+import pickle
 import seaborn as sns
-from tqdm import tqdm
 import MDAnalysis as mda
 import MDAnalysis
-from scipy.optimize import linear_sum_assignment as lsa
+import warnings
+#from scipy.optimize import linear_sum_assignment as lsa
+#import bz2
 
 mpl.rcParams['pdf.fonttype'] = 42
 
@@ -75,17 +78,14 @@ def tm(Prot, i):
 def confidence_interval(data, percentage=95):
     ds = np.sort(data)
     perc = np.arange(1, len(ds) + 1) / (len(ds))
-    lower, upper = (100 - percentage) / 200, (
-                percentage + (100 - percentage) / 2) / 100
+    lower = (100 - percentage) / 200
+    upper = (percentage + (100 - percentage) / 2) / 100
 
     try:
         l = ds[np.where(perc <= lower)[0][-1]]
-    except IndexError:
-        l = ds[0]
-
-    try:
         u = ds[np.where(perc >= upper)[0][0]]
     except IndexError:
+        l = ds[0]
         u = ds[-1]
 
     return [l, u]
@@ -193,10 +193,10 @@ def plot_results(results, cond='ml', save=False, show=False):
 
     fig, axs = plt.subplots(figsize=(4, 3))
     plt.scatter(results.t, results.s, s=15, label='data')
-    plt.plot(results.t, np.inner(weights, np.exp(np.outer(results.t, -rates))), \
+    plt.plot(results.t, np.inner(weights, np.exp(np.outer(results.t, -rates))),
              label='fit', color='y', ls='dashed', lw=3)
     for i in range(results.ncomp):
-        plt.plot(results.t, weights[i] * np.exp(results.t * -rates[i]), \
+        plt.plot(results.t, weights[i] * np.exp(results.t * -rates[i]),
                  label=f'Comp.{i}', color=f'C{i}')
     plt.plot([], [], ' ', label=rf'$\tau$={np.round(1 / rates.min(), 1)} ns')
     plt.yscale('log')
@@ -221,7 +221,7 @@ def all_post_hist(results, save=False, show=False, wlims=None, rlims=None):
         Attr = getattr(results, attr)
         plt.figure(figsize=(4, 3))
         for i in range(results.ncomp):
-            plt.hist(Attr[i], density=True, bins=15, label=f'comp. {i}', \
+            plt.hist(Attr[i], density=True, bins=15, label=f'comp. {i}',
                      alpha=0.5)
         plt.legend()
         plt.xlabel(f'{attr}{unit}'), plt.ylabel('p').set_rotation(0)
@@ -293,9 +293,9 @@ def plot_trace(results, attr, comp=None, xrange=None, yrange=None, save=False,
         plt.xlabel('iteration')
         plt.ylabel(f'{attr}')
         plt.legend()
-        if xrange != None:
+        if xrange is not None:
             plt.xlim(xrange[0], xrange[1])
-        if yrange != None:
+        if yrange is not None:
             plt.ylim(yrange[0], yrange[1])
         if save:
             plt.savefig(f'{outdir}/figs/k{results.ncomp}-trace_{attr}.png')
@@ -307,9 +307,9 @@ def plot_trace(results, attr, comp=None, xrange=None, yrange=None, save=False,
             plt.xlabel('iteration')
             plt.ylabel(f'{attr}')
             plt.legend()
-        if xrange != None:
+        if xrange is not None:
             plt.xlim(xrange[0], xrange[1])
-        if yrange != None:
+        if yrange is not None:
             plt.ylim(yrange[0], yrange[1])
         if save:
             plt.savefig(f'{outdir}/figs/k{results.ncomp}-trace_{attr}_comps-\
@@ -400,11 +400,16 @@ def make_residue_plots(results, comps=None, show=False):
     plot_trace(r, 'rates', comp=comps, save=True, show=show, yrange=[-0.1, 6])
 
 
-def plot_protein(residues, t_slow, bars, prot, label_cutoff=3, ylim=None,
+def plot_protein(residues, t_slow, bars, prot=None, label_cutoff=3, ylim=None,
                  major_tick=None, minor_tick=None, scale=1):
-    with open('tm_dict.txt', 'r') as f:
-        contents = f.read()
-        prots = ast.literal_eval(contents)
+    try:
+        with open('tm_dict.txt', 'r') as f:
+            contents = f.read()
+            prots = ast.literal_eval(contents)
+    except FileNotFoundError:
+        warnings.warn("tm_dict.txt not found, TM bars will not be drawn in " 
+                      r"$\tau$ vs resid plot")
+        prot = None
 
     if not os.path.exists('figs'):
         os.mkdir('figs')
@@ -413,11 +418,14 @@ def plot_protein(residues, t_slow, bars, prot, label_cutoff=3, ylim=None,
     fig, axs = plt.subplots(2, 1, figsize=(width, height), sharex=True)
     axs[0].tick_params(axis='both', which='major', labelsize=10)
     axs[1].tick_params(axis='both', which='major', labelsize=10)
-    p = [Rectangle((tm(prots[prot]['helices'], i + 1)[0][0], 0),
-                   tm(prots[prot]['helices'], i + 1)[1], 1, fill=True) for i in
-         range(7)]
-    patches = PatchCollection(p)
-    patches.set_color('C0')
+    if prot is not None:
+        p = [Rectangle((tm(prots[prot]['helices'], i + 1)[0][0], 0),
+                       tm(prots[prot]['helices'], i + 1)[1], 1, fill=True) 
+             for i in range(7)]
+        patches = PatchCollection(p)
+        patches.set_color('C0')
+        axs[1].add_collection(patches)
+    
     resids = np.array([int(res[1:]) for res in residues])
     max_inds = np.where(t_slow > label_cutoff * t_slow.mean())
     axs[0].plot(resids, t_slow, '.', color='C0')
@@ -425,22 +433,20 @@ def plot_protein(residues, t_slow, bars, prot, label_cutoff=3, ylim=None,
                     alpha=0.5)
     [axs[0].text(resids[ind], t_slow[ind], residues[ind]) for ind in
      max_inds[0]]
-    axs[1].add_collection(patches)
-    # if (prot=='cck1r') or (prot=='cck2r'):
-    #    axs[0].set_ylim(0, 1300)
-    # else:
-    #    axs[0].set_ylim(0, 500)
     axs[0].set_ylabel(r'$\tau$ [ns]')
     axs[1].set_xlabel(r'residue')
     axs[0].get_xaxis().set_visible(False)
     axs[1].get_yaxis().set_visible(False)
     axs[1].xaxis.set_major_locator(MultipleLocator(100))
-    axs[0].yaxis.set_major_locator(MultipleLocator(major_tick))
-    axs[0].yaxis.set_minor_locator(MultipleLocator(minor_tick))
-    # axs[1].xaxis.set_minor_locator(MultipleLocator(10))
+    if major_tick is not None:
+        axs[0].yaxis.set_major_locator(MultipleLocator(major_tick))
+    if minor_tick is not None:
+        axs[0].yaxis.set_minor_locator(MultipleLocator(minor_tick))
+    if ylim is not None:
+        axs[0].set_ylim(ylim)
     axs[1].set_aspect(7)
     axs[0].margins(x=0)
-    axs[0].set_ylim(ylim)
+
     plt.subplots_adjust(hspace=-0.45, top=0.92)
     sns.despine(offset=10, ax=axs[0], bottom=True)
     sns.despine(ax=axs[1], top=True, bottom=False, left=True)
@@ -466,7 +472,7 @@ def plot_protein(residues, t_slow, bars, prot, label_cutoff=3, ylim=None,
 #     gib.run()
 
 
-def run_residue(residue, time, proc, ncomp, niter, cutoff):
+def run_residue(residue, time, proc, ncomp, niter, cutoff, g):
     from basicrta.gibbs import Gibbs
     x = np.array(time)
     if len(x) != 0:
@@ -546,10 +552,10 @@ def write_trajs(u, time, trajtime, indicator, residue, lipind, step):
         if len(write_frames) > step:
             write_frames = write_frames[::step]
             write_Linds = write_Linds[::step]
-        with mda.Writer(f"{residue}/comp{comp}_traj.xtc", \
+        with mda.Writer(f"{residue}/comp{comp}_traj.xtc",
                         len((prot + chol.residues[0].atoms).atoms)) as W:
-            for i, ts in tqdm(enumerate(u.trajectory[write_frames]), \
-                              desc=f"{residue}-comp{comp}", position=proc, \
+            for i, ts in tqdm(enumerate(u.trajectory[write_frames]),
+                              desc=f"{residue}-comp{comp}", position=proc,
                               leave=False, total=len(write_frames)):
                 ag = prot + chol.residues[write_Linds[i]].atoms
                 W.write(ag)
@@ -563,7 +569,7 @@ def plot_hists(timelens, indicators, residues):
 
         plt.close()
         for i in range(ncomps):
-            h, edges = np.histogram(timelen, density=True, bins=50, \
+            h, edges = np.histogram(timelen, density=True, bins=50,
                                     weights=indicator[i])
             m = 0.5 * (edges[1:] + edges[:-1])
             plt.plot(m, h, '.', label=i, alpha=0.5)
@@ -638,7 +644,7 @@ def expand_times(contacts):
         restimes = []
         for lip in range(times.shape[1]):
             for i in range(times[res, lip].shape[0]):
-                [restimes.append(j) for j in [times[res, lip][i]] * \
+                [restimes.append(j) for j in [times[res, lip][i]] *
                  Ns[res, lip][i].astype(int)]
         alltimes.append(restimes)
     return np.asarray(alltimes)
@@ -677,14 +683,13 @@ def extract_data(gibbs):
     rcutoff = arates.min()
     data = np.stack((aweights, arates), axis=1)
 
-    tweights, trates = train_weights.flatten(), train_rates.flatten()
-    train_data = np.stack((tweights, trates), axis=1)
+    # tweights, trates = train_weights.flatten(), train_rates.flatten()
+    # train_data = np.stack((tweights, trates), axis=1)
 
-    tmpw, tmpr = np.delete(weights, train_inds), np.delete(rates, train_inds)
-    pweights, prates = tmpw[tmpw > wcutoff], tmpr[tmpw > wcutoff]
-    predict_data = np.stack((pweights, prates), axis=1)
+    # tmpw, tmpr = np.delete(weights, train_inds), np.delete(rates, train_inds)
+    # pweights, prates = tmpw[tmpw > wcutoff], tmpr[tmpw > wcutoff]
+    # predict_data = np.stack((pweights, prates), axis=1)
     return data, train_inds
-
 
 def mixture_and_plot(gibbs, scale=2, sparse=1, remove_noise=False, wlim=None,
                      rlim=None, **kwargs):
@@ -701,7 +706,7 @@ def mixture_and_plot(gibbs, scale=2, sparse=1, remove_noise=False, wlim=None,
 
     weights, rates = gibbs.mcweights[burnin_ind:], gibbs.mcrates[burnin_ind:]
     lens = np.array([len(row[row > wcutoff]) for row in weights])
-    lmin, lmode, lmax = lens.min(), stats.mode(lens).mode, lens.max()
+    lmode = stats.mode(lens).mode 
     train_param = lmode
 
     train_inds = np.where(lens == train_param)[0]
@@ -1251,7 +1256,6 @@ def get_fa_sel(aln, protA, protB):
     selB_mat = protB.residues[inds]
     return selA_mat, selB_mat
 
-
 def get_fa_sel_match(aln, protA, protB):
     with open(aln) as F:
         names = []
@@ -1275,31 +1279,11 @@ def get_fa_sel_match(aln, protA, protB):
 
     seqA = np.array([i for i in seqs[0]])
     seqB = np.array([i for i in seqs[1]])
-
     match_inds = np.where(seqA == seqB)[0]
-
-    # results = []
-    # [results.append(list(map(get_code, (seqs[i])))) for i in range(2)]
-    # results = np.asarray(results)
-    #
-    # start_inds = np.arange(len(results[0]))
-    # void_inds = np.where(results == '-')
-    # fin_inds = np.delete(start_inds, void_inds[1])
-    #
-    # results = results[:, fin_inds]
-    # resnamesA = protA.residues.resnames
-    # resnamesB = protB.residues.resnames
-    #
-    # indsA = get_indices(resnamesA, results[0])
-    # indsB = get_indices(resnamesB, results[1])
-    #
-    # matching_indsA = indsA[resnamesA[indsA] == resnamesB[indsB]]
-    # matching_indsB = indsB[resnamesA[indsA] == resnamesB[indsB]]
 
     selA_mat = protA.residues[match_inds]
     selB_mat = protB.residues[match_inds]
     return selA_mat, selB_mat
-
 
 def align_homologues(Areduced, Breduced, aln):
     from MDAnalysis.analysis import align
@@ -1329,42 +1313,39 @@ def get_delta_tau(aln, protA, protB, tausA, tausB):
     residsB = selB.residues.resids
 
     matchids = np.stack((residsA, residsB)).T
-    match_vals = np.array([[tausA[:, 1][tausA[:, 0]==iA][0], 
-                            tausB[:, 1][tausB[:, 0]==iB][0], iA, iB] 
+    match_vals = np.array([[tausA[:, 1][tausA[:, 0] == iA][0], 
+                            tausB[:, 1][tausB[:, 0] == iB][0], iA, iB] 
                            for iA, iB in matchids if iA in tausA[:, 0] 
                            if iB in tausB[:, 0]])
 
     delta_tau = -np.diff(match_vals[:, :2]).reshape(len(match_vals),)
     return match_vals[:,2].astype(int), match_vals[:, 3].astype(int), delta_tau
 
-
 def plot_delta_tau(A, B, dtau, protA, protB, factor=2):
-	scale = 1
-	rmsd = np.sqrt(np.mean(dtau**2))
-	fig, ax = plt.subplots(1, figsize=(4*scale, 3*scale))
-	ax.plot(A[dtau>0], dtau[dtau>0], '.', color='C0')
-	ax.plot(A[dtau<0], dtau[dtau<0], '.', color='C3')
-	for i, tau in enumerate(dtau):
-		if tau>=factor*rmsd:
-			resname = protA.select_atoms(f'resid {A[i]}').resnames[0]
-			reslet = mda.lib.util.convert_aa_code(resname)
-			ax.text(A[i], tau, f'{reslet}{A[i]}')
-		elif (tau<0) & (abs(tau)>=factor*rmsd):
-			resname = protB.select_atoms(f'resid {B[i]}').resnames[0]
-			reslet = mda.lib.util.convert_aa_code(resname)
-			ax.text(A[i], tau, f'{reslet}{B[i]}')
-		else:
-			continue
-	ax.xaxis.set_ticks([])
-	ax.set_ylabel(r'$\Delta\tau\, [ns]$')
-	#ax.set_xlabel('residue')
-	plt.gca().spines['top'].set_visible(False)
-	plt.gca().spines['bottom'].set_visible(False)
-	plt.gca().spines['right'].set_visible(False)
-	ax.yaxis.set_minor_locator(MultipleLocator(125))
-	ax.yaxis.set_major_locator(MultipleLocator(500))
-	plt.tight_layout()
-	plt.savefig('delta_tau.pdf', bbox_inches='tight')
-	plt.savefig('delta_tau.png', bbox_inches='tight')
-	plt.show()
-
+    scale = 1
+    rmsd = np.sqrt(np.mean(dtau**2))
+    fig, ax = plt.subplots(1, figsize=(4*scale, 3*scale))
+    ax.plot(A[dtau > 0], dtau[dtau > 0], '.', color='C0')
+    ax.plot(A[dtau < 0], dtau[dtau < 0], '.', color='C3')
+    for i, tau in enumerate(dtau):
+        if tau >= factor*rmsd:
+            resname = protA.select_atoms(f'resid {A[i]}').resnames[0]
+            reslet = mda.lib.util.convert_aa_code(resname)
+            ax.text(A[i], tau, f'{reslet}{A[i]}')
+        elif (tau<0) & (abs(tau) >= factor*rmsd):
+            resname = protB.select_atoms(f'resid {B[i]}').resnames[0]
+            reslet = mda.lib.util.convert_aa_code(resname)
+            ax.text(A[i], tau, f'{reslet}{B[i]}')
+        else:
+            continue
+    ax.xaxis.set_ticks([])
+    ax.set_ylabel(r'$\Delta\tau\, [ns]$')
+    plt.gca().spines['top'].set_visible(False)
+    plt.gca().spines['bottom'].set_visible(False)
+    plt.gca().spines['right'].set_visible(False)
+    ax.yaxis.set_minor_locator(MultipleLocator(125))
+    ax.yaxis.set_major_locator(MultipleLocator(500))
+    plt.tight_layout()
+    plt.savefig('delta_tau.pdf', bbox_inches='tight')
+    plt.savefig('delta_tau.png', bbox_inches='tight')
+    plt.show()

@@ -210,15 +210,15 @@ class WDensityAnalysis(AnalysisBase):
             try:
                 smin = np.min(coord, axis=0)
                 smax = np.max(coord, axis=0)
-            except ValueError as err:
+            except ValueError:
                 msg = ("No atoms in AtomGroup at input time frame. "
                        "This may be intended; please ensure that "
                        "your grid selection covers the atomic "
                        "positions you wish to capture.")
                 warnings.warn(msg)
                 logger.warning(msg)
-                smin = self._gridcenter     #assigns limits to be later -
-                smax = self._gridcenter     #overwritten by _set_user_grid
+                smin = self._gridcenter     # assigns limits to be later -
+                smax = self._gridcenter     # overwritten by _set_user_grid
             # Overwrite smin/smax with user defined values
             smin, smax = self._set_user_grid(self._gridcenter, self._xdim,
                                              self._ydim, self._zdim, smin,
@@ -251,7 +251,7 @@ class WDensityAnalysis(AnalysisBase):
         self._edges = edges
         self._arange = arange
         self._bins = bins
-        #self._grids = np.array([grid.copy() for _ in range(self._weights.shape[1])])
+        # self._grids = np.array([grid.copy() for _ in range(self._weights.shape[1])])
 
     def _single_frame(self):
         h, _ = np.histogramdd(self._atomgroup.positions,
@@ -260,7 +260,7 @@ class WDensityAnalysis(AnalysisBase):
         # return self._reduce(self._grid, h)
         #
         # serial code can simply do
-        #self._grids += np.array([w*h for w in self._weights[self._frame_index]])
+        # self._grids += np.array([w*h for w in self._weights[self._frame_index]])
         self._grid += h*self._weights[self._frame_index]
 
     def _conclude(self):
@@ -271,12 +271,12 @@ class WDensityAnalysis(AnalysisBase):
                           parameters={'isDensity': False})
         density.make_density()
         self.results.density = density
-        #self._grids /= float(self.n_frames)
-        #densities = [Density(grid=grid, edges=self._edges,
+        # self._grids /= float(self.n_frames)
+        # densities = [Density(grid=grid, edges=self._edges,
         #                  units={'length': "Angstrom"},
         #                  parameters={'isDensity': False}) for grid in self._grids]
-        #[d.make_density() for d in densities]
-        #self.results.densities = densities
+        # [d.make_density() for d in densities]
+        # self.results.densities = densities
 
     @property
     def density(self):
@@ -327,7 +327,6 @@ class WDensityAnalysis(AnalysisBase):
             raise ValueError("xdim, ydim, and zdim must be numbers") from err
         if any(np.isnan(gridcenter)) or any(np.isnan(xyzdim)):
             raise ValueError("Gridcenter or grid dimensions have NaN element")
-
 
         # Set min/max by shifting by half the edge length of each dimension
         umin = gridcenter - xyzdim/2
@@ -471,7 +470,7 @@ class Density(Grid):
 
         parameters = kwargs.pop('parameters', {})
         if (len(args) > 0 and isinstance(args[0], str) or
-            isinstance(kwargs.get('grid', None), str)):
+           isinstance(kwargs.get('grid', None), str)):
             # try to be smart: when reading from a file then it is likely that
             # this is a density
             parameters.setdefault('isDensity', True)
@@ -626,4 +625,3 @@ class Density(Grid):
         else:
             grid_type = 'histogram'
         return '<Density ' + grid_type + ' with ' + str(self.grid.shape) + ' bins>'
-

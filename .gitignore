@@ -1,0 +1,5 @@
+/docs/_build/*
+*__pycache__*
+basicrta.egg-info/
+dist/
+

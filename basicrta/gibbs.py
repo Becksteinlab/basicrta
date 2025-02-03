@@ -1,6 +1,3 @@
-"""Analysis functions
-"""
-
 import os
 import gc
 import pickle
@@ -22,7 +19,16 @@ rng = default_rng()
 
 class ParallelGibbs(object):
     """
-    A module to take a contact map and run Gibbs samplers for each residue
+    A module to take a contact map and run Gibbs samplers for each residue.
+
+    :param contacts: Contact pickle file (`contacts-{cutoff}.pkl`).
+    :type contacts: str
+    :param nproc: Number of processes to use in running Gibbs samplers.
+    :type nproc: int
+    :param ncomp: Number of mixture components to use in the Gibbs sampler.
+    :type ncomp: int
+    :param niter: Number of iterations of the Gibbs sampler to perform.
+    :type niter: int
     """
 
     def __init__(self, contacts, nproc=1, ncomp=15, niter=110000):
@@ -33,7 +39,14 @@ class ParallelGibbs(object):
         self.ncomp = ncomp
         self.contacts = contacts
 
-    def run(self, run_resids=None):
+    def run(self, run_resids=None, g=100):
+        """
+        The :meth:`run` method executes the Gibbs samplers for all residues of
+        `sel1` present in the contact map, or a list of resids can be provided.
+
+        :param run_resids: Resid(s) for which to run a Gibbs sampler. 
+        :type run_resids: int or list, optional
+        """
         from basicrta.util import run_residue
 
         with open(self.contacts, 'r+b') as f:
@@ -58,7 +71,7 @@ class ParallelGibbs(object):
                          run_resids])
         residues = residues[inds]
         input_list = [[residues[i], times[i].copy(), i % self.nproc,
-                       self.ncomp, self.niter, self.cutoff] for i in
+                       self.ncomp, self.niter, self.cutoff, g] for i in
                       range(len(residues))]
 
         del contacts, times
@@ -72,14 +85,14 @@ class ParallelGibbs(object):
                               desc='overall progress'):
                     pass
             except KeyboardInterrupt:
-                    pass
+                pass
 
 
 class Gibbs(object):
     r"""Gibbs sampler to estimate parameters of an exponential mixture for a set
     of data. Results are stored in :class:`gibbs.results`, which uses
     :class:`MDAnalysis.analysis.base.Results()`. If 'results=None' the gibbs
-    sampler has not been executed, which requires calling :meth:`run`
+    sampler has not been executed, which requires calling :meth:`run`.
 
     :param times: Set of residence times to analyze
     :type times: array, optional
@@ -91,7 +104,7 @@ class Gibbs(object):
     :type ncomp: int
     :param niter: Number of iterations to run the Gibbs sampler
     :type niter: int
-    :param cutoff: Cutoff calue used in contact analysis, used to determine
+    :param cutoff: Cutoff value used in contact analysis, used to determine
                    directory to load/save results. Allows for multiple cutoffs
                    to be tested in directory containing contacts.
     :type cutoff: float
@@ -99,7 +112,7 @@ class Gibbs(object):
     EXAMPLE
     -------
     >>> from basicrta.gibbs import Gibbs
-    >>> from basicrta.tests.data import times
+    >>> from basicrta.tests.datafiles import times
     >>> g = Gibbs(times=times, residue='W313', cutoff=7.0)
     >>> g.run()
     >>> g.process_gibbs()
@@ -118,14 +131,14 @@ class Gibbs(object):
     """
 
     def __init__(self, times=None, residue=None, loc=0, ncomp=15, niter=110000,
-                 cutoff=None):
+                 cutoff=None, g=50, burnin=10000):
         self.times = times
         self.residue = residue
         self.niter = niter
         self.loc = loc
         self.ncomp = ncomp
-        self.g = 100
-        self.burnin = 10000
+        self.g = g
+        self.burnin = burnin
         self.cutoff = cutoff
         self.processed_results = Results()
         self._noise_cutoff = 0.4
@@ -162,12 +175,13 @@ class Gibbs(object):
 
     def run(self):
         r"""
-        Execute the Gibbs sampler and save the results to :attr:`Gibbs.results`
+        Execute the Gibbs sampler and save the raw data to the instance of
+        :class:`Gibbs`.
         """
         # initialize weights and rates
         self._prepare()
         if not os.path.exists(f'basicrta-{self.cutoff}/{self.residue}'):
-            os.mkdir(f'basicrta-{self.cutoff}/{self.residue}')
+            os.makedirs(f'basicrta-{self.cutoff}/{self.residue}')
 
         inrates = 0.5 * 10 ** np.arange(-self.ncomp + 2, 2, dtype=float)
         tmpw = 9 * 10 ** (-np.arange(1, self.ncomp + 1, dtype=float))
@@ -181,7 +195,7 @@ class Gibbs(object):
             # compute probabilities
             tmp = weights*rates*np.exp(np.outer(-rates, self.times)).T
             z = (tmp.T/tmp.sum(axis=1)).T
-        
+
             # sample indicator
             s = np.argmax(rng.multinomial(1, z), axis=1)
 
@@ -204,7 +218,7 @@ class Gibbs(object):
 
         self.save()
 
-    def cluster(self, method="GaussianMixture", **kwargs):
+    def cluster(self, method="GaussianMixture", g=self.g, **kwargs):
         r"""
         Cluster the processed results using the methods available in
         :class:`sklearn.mixture`
@@ -216,13 +230,13 @@ class Gibbs(object):
         from scipy import stats
 
         clu = getattr(mixture, method)
-        burnin_ind = self.burnin // self.g
+        burnin_ind = self.burnin // g
         data_len = len(self.times)
         wcutoff = 10 / data_len
 
         weights, rates = self.mcweights[burnin_ind:], self.mcrates[burnin_ind:]
         lens = np.array([len(row[row > wcutoff]) for row in weights])
-        lmin, lmode, lmax = lens.min(), stats.mode(lens).mode, lens.max()
+        lmode = stats.mode(lens).mode
         train_param = lmode
 
         train_inds = np.where(lens == train_param)[0]
@@ -242,7 +256,7 @@ class Gibbs(object):
         r.fit(np.log(train_data))
         all_labels = r.predict(np.log(data))
 
-        if self.indicator is not None:
+        if (self.indicator is not None) and g==self.g:
             indicator = self.indicator[burnin_ind:]
         else:
             indicator = self._sample_indicator()
@@ -258,24 +272,26 @@ class Gibbs(object):
         setattr(self.processed_results, 'indicator', pindicator)
         setattr(self.processed_results, 'labels', all_labels)
 
-    def process_gibbs(self):
+    def process_gibbs(self, g=self.g):
         r"""
-        Process the data collected from the Gibbs sampler
+        Process the samples collected from the Gibbs sampler.
+        :meth:`process_gibbs` can be called multiple times to check the
+        robustness of the results.
         """
         from basicrta.util import mixture_and_plot
         from scipy import stats
 
         data_len = len(self.times)
         wcutoff = 10/data_len
-        burnin_ind = self.burnin//self.g
+        burnin_ind = self.burnin//g
         inds = np.where(self.mcweights[burnin_ind:] > wcutoff)
-        indices = (np.arange(self.burnin, self.niter + 1, self.g)[inds[0]] //
-                   self.g)
+        indices = (np.arange(self.burnin, self.niter + 1, g)[inds[0]] //
+                   g)
         weights, rates = self.mcweights[burnin_ind:], self.mcrates[burnin_ind:]
         fweights, frates = weights[inds], rates[inds]
 
         lens = [len(row[row > wcutoff]) for row in self.mcweights[burnin_ind:]]
-        lmin, lmode, lmax = np.min(lens), stats.mode(lens).mode, np.max(lens)
+        lmode = stats.mode(lens).mode
 
         self.cluster(n_init=117, n_components=lmode)
         labels, presorts = mixture_and_plot(self)
@@ -296,16 +312,16 @@ class Gibbs(object):
         Generate the combined result plot with option to change kwargs without
         re-clustering.
 
-        :param remove_noise: Whether to remove noise
+        :param remove_noise: Option to remove noise clusters
         :type remove_noise: bool
         """
         from basicrta.util import mixture_and_plot
         mixture_and_plot(self, remove_noise=remove_noise, **kwargs)
 
-    def _sample_indicator(self):
-        indicator = np.zeros(((self.niter+1)//self.g, self.times.shape[0]),
+    def _sample_indicator(self, g=self.g):
+        indicator = np.zeros(((self.niter+1)//g, self.times.shape[0]),
                              dtype=np.uint8)
-        burnin_ind = self.burnin//self.g
+        burnin_ind = self.burnin//g
         for i, (w, r) in enumerate(zip(self.mcweights, self.mcrates)):
             # compute probabilities
             probs = w*r*np.exp(np.outer(-r, self.times)).T
@@ -319,7 +335,7 @@ class Gibbs(object):
 
     def save(self):
         """
-        Save current state of the Gibbs
+        Save current state of the :class:`Gibbs` instance.
         """
         savedir = f'basicrta-{self.cutoff}/{self.residue}/'
         filename = f'gibbs_{self.niter}.pkl'
@@ -335,9 +351,9 @@ class Gibbs(object):
     @staticmethod
     def load(file):
         """
-        Load Gibbs
+        Load an instance of :class:`Gibbs`.
 
-        :param file: Filename of Gibbs to load
+        :param file: Path to instance of :class:`Gibbs`
         :type file: str
         """
         from basicrta.util import get_s
@@ -366,7 +382,8 @@ class Gibbs(object):
 
     def plot_tau_hist(self, scale=1, save=False):
         r"""
-        Plot histogram of tau values
+        Plot histogram of tau values. The figure aspect ratio is 4:3, and can be
+        made larger/smaller using the `scale` argument. 
 
         :param scale: Increase plot size by this factor
         :type scale: float
@@ -384,7 +401,7 @@ class Gibbs(object):
 
         fig, ax = plt.subplots(1, figsize=(4*scale, 3*scale))
         ax.hist(1/rp.rates[rp.labels == i], label=f'{i}', alpha=0.5,
-                   color=cmap(i))
+                color=cmap(i))
         ax.set_xlabel(r'$\tau$ [ns]')
         ax.set_ylabel('count')
 
@@ -437,16 +454,12 @@ class Gibbs(object):
         ax2 = fig.add_subplot(gs[0, 8:]), fig.add_subplot(gs[1:, 8:])
 
         # plot posteriors
-        [ax0.hist(rp.weights[rp.labels == i], label=f'posterior', alpha=0.5,
-                    color=cmap(i), density=True, bins=bins) for i in comps]
-        # [ax1[0].hist(rp.rates[rp.labels == i], label=f'{i}', alpha=0.5,
-        #              color=cmap(i), density=True, bins=bins) for i in comps]
+        [ax0.hist(rp.weights[rp.labels == i], label='posterior', alpha=0.5,
+                  color=cmap(i), density=True, bins=bins) for i in comps]
         [ax1[0, 0].hist(rp.rates[rp.labels == i], label=f'{i}', alpha=0.5,
                         color=cmap(i), density=True, bins=bins) for i in comps]
         [ax1[1, 0].hist(rp.rates[rp.labels == i], label=f'{i}', alpha=0.5,
                         color=cmap(i), density=True, bins=bins) for i in comps]
-        # [ax2[0].hist(1/rp.rates[rp.labels == i], label=f'{i}', alpha=0.5,
-        #              color=cmap(i), density=True, bins=bins) for i in comps]
         [ax2[1].hist(1/rp.rates[rp.labels == i], label=f'{i}', alpha=0.5,
                      color=cmap(i), density=True, bins=bins) for i in comps]
 
@@ -457,27 +470,17 @@ class Gibbs(object):
                             rp.rates[rp.labels == i].max()] for i in comps])
         tbounds = np.array([[(1/rp.rates[rp.labels == i]).min(),
                             (1/rp.rates[rp.labels == i]).max()] for i in comps])
+        
         rx = np.linspace(0, 10, 10000)
         tx = np.linspace(0, 500, 10000)
-        # rx = np.array([np.linspace(rb[0], rb[1], 10000) for rb in rbounds])
-        # tx = np.array([np.linspace(tb[0], tb[1], 10000) for tb in tbounds])
-
-        # [ax[0].hist(rng.dirichlet(self.whypers, size=len(rp.labels))[:, 0]
-        #             bins=np.linspace(wbounds[i, 0], wbounds[i, 1], 10),
-        #             density=True)
-        #  for i in range(len(comps))]
+        
         ax0.hist(rng.dirichlet(self.whypers, size=1000000).flatten(),
-                   density=True, bins=20000, label='prior', alpha=0.5)
+                 density=True, bins=20000, label='prior', alpha=0.5)
         rys = (stats.gamma(self.rhypers[0, 0], scale=1/self.rhypers[0, 1]).
                pdf(rx))
         tys = (stats.invgamma(self.rhypers[0, 0], scale=self.rhypers[0, 1]).
                pdf(tx))
 
-
-        # ax1[0].plot(rx, rys, label=f'{i}', alpha=0.5)
-        # ax1[0].fill_between(rx, rys, alpha=0.5)
-        # ax1[0, 0].plot(rx, rys, label=f'{i}', alpha=0.5)
-        # ax1[0, 0].fill_between(rx, rys, alpha=0.5)
         ax1[1, 0].plot(rx, rys, label=f'{i}', alpha=0.5)
         ax1[1, 0].fill_between(rx, rys, alpha=0.5)
         ax1[1, 1].plot(rx, rys, label=f'{i}', alpha=0.5)
@@ -513,25 +516,15 @@ class Gibbs(object):
         kwargs2 = dict(marker=[(1+d, 0), (0, 1+d)], markersize=12,
                        linestyle="none", color='k', mec='k', mew=1,
                        clip_on=False)
+
         ax1[0, 0].plot([0], transform=ax1[0, 0].transAxes, **kwargs)
         ax1[1, 0].plot([1], transform=ax1[1, 0].transAxes, **kwargs)
         ax1[0, 1].plot([1], [0], transform=ax1[0, 1].transAxes, **kwargs)
         ax1[1, 1].plot([1], [1], transform=ax1[1, 1].transAxes, **kwargs)
         ax1[0, 0].plot([1], [1], transform=ax1[0, 0].transAxes, **kwargs2)
-        # ax1[1, 0].plot([1], transform=ax1[1, 0].transAxes, **kwargs)
-        # ax1[0, 1].plot([0], [1], transform=ax1[0, 1].transAxes, **kwargs2)
-        # ax1[1, 1].plot([1], [0], transform=ax1[1, 1].transAxes, **kwargs2)
-
-        # ax1[0, 0].plot([1], transform=ax1[0, 0].transAxes, **kwargs2)
-        # ax1[1, 0].plot([0, 1], [1, 1], transform=ax1[1, 0].transAxes, **kwargs2)
-        # ax1[0, 1].plot([0, 1], [0, 0], transform=ax1[0, 1].transAxes, **kwargs2)
-        # ax1[1, 1].plot([0, 1], [1, 1], transform=ax1[1, 1].transAxes, **kwargs2)
-        # ax1[0 1].plot([0, 1], [1, 1], transform=ax1[0, 1].transAxes, **kwargs)
-        # ax1[1, 1].plot([0, 1], [1, 1], transform=ax1[1, 1].transAxes, **kwargs)
 
         ax2[0].plot([0, 1], [0, 0], transform=ax2[0].transAxes, **kwargs)
         ax2[1].plot([0, 1], [1, 1], transform=ax2[1].transAxes, **kwargs)
-
 
         ax0.set_xlabel(r'$\pi_k$')
         ax1[1, 0].set_xlabel(r'$\lambda_k$ [ns$^{-1}$]')
@@ -546,10 +539,6 @@ class Gibbs(object):
             ax1[0].set_xscale('log')
             ax1[1].set_xscale('log')
         else:
-            rmin = rbounds.min()
-            rmax = rbounds.max()
-            wmin = wbounds.min()
-            wmax = wbounds.max()
             ax0.set_xlim(1e-5, 1e-3)
 
             ax1[0, 0].set_xlim(1e-4, 1e-2)
@@ -567,69 +556,57 @@ class Gibbs(object):
             ax2[1].set_ylim(0, 0.015)
 
             ax0.xaxis.set_major_locator(MaxNLocator(3, min_n_ticks=3,
-                                                      prune='both'))
+                                                    prune='both'))
             ax0.xaxis.set_minor_locator(MaxNLocator(12, min_n_ticks=9,
-                                                      prune='both'))
+                                                    prune='both'))
             ax0.yaxis.set_major_locator(MaxNLocator(3, min_n_ticks=3,
-                                                      prune='both'))
+                                                    prune='both'))
             ax0.yaxis.set_minor_locator(MaxNLocator(12, min_n_ticks=9,
-                                                      prune='both'))
+                                                    prune='both'))
             ax0.ticklabel_format(style='sci', axis='both', scilimits=(0, 0),
-                                   useMathText=True)
+                                 useMathText=True)
 
             ax1[1, 0].xaxis.set_major_locator(MaxNLocator(3, min_n_ticks=3,
-                                                      prune='both'))
+                                                          prune='both'))
             ax1[1, 0].xaxis.set_minor_locator(MaxNLocator(12, min_n_ticks=9,
-                                                      prune='both'))
+                                                          prune='both'))
             ax1[1, 1].xaxis.set_major_locator(MaxNLocator(3, min_n_ticks=3,
-                                                      prune='both'))
+                                                          prune='both'))
             ax1[1, 1].xaxis.set_minor_locator(MaxNLocator(12, min_n_ticks=9,
-                                                      prune='both'))
+                                                          prune='both'))
             ax1[0, 0].yaxis.set_major_locator(MaxNLocator(3, min_n_ticks=3,
-                                                      prune='both'))
+                                                          prune='both'))
             ax1[0, 0].yaxis.set_minor_locator(MaxNLocator(12, min_n_ticks=9,
-                                                      prune='both'))
+                                                          prune='both'))
             ax1[1, 0].yaxis.set_major_locator(MaxNLocator(3, min_n_ticks=3,
-                                                      prune='both'))
+                                                          prune='both'))
             ax1[1, 0].yaxis.set_minor_locator(MaxNLocator(12, min_n_ticks=9,
-                                                      prune='both'))
-            # ax1[0, 1].yaxis.set_major_locator(MaxNLocator(3, min_n_ticks=3,
-            #                                           prune='both'))
-            # ax1[0, 1].yaxis.set_minor_locator(MaxNLocator(12, min_n_ticks=9,
-            #                                           prune='both'))
-            # ax1[1, 1].yaxis.set_major_locator(MaxNLocator(3, min_n_ticks=3,
-            #                                           prune='both'))
-            # ax1[1, 1].yaxis.set_minor_locator(MaxNLocator(12, min_n_ticks=9,
-            #                                           prune='both'))
-            # ax1[0, 0].ticklabel_format(style='sci', axis='x', scilimits=(0, 0),
-            #                         useMathText=True)
+                                                          prune='both'))
+            
             ax1[0, 0].ticklabel_format(style='sci', axis='y', scilimits=(1, 1),
-                                    useMathText=True)
+                                       useMathText=True)
             ax1[1, 0].ticklabel_format(style='sci', axis='y', scilimits=(1, 1),
-                                    useMathText=True)
-            ax1[1, 0].ticklabel_format(style='sci', axis='x', scilimits=(-3, -3),
-                                    useMathText=True)
+                                       useMathText=True)
+            ax1[1, 0].ticklabel_format(style='sci', axis='x', 
+                                       scilimits=(-3, -3), useMathText=True)
             ax1[0, 1].ticklabel_format(style='sci', axis='x', scilimits=(0, 0),
-                                    useMathText=True)
+                                       useMathText=True)
             ax1[0, 1].ticklabel_format(style='sci', axis='y', scilimits=(1, 1),
-                                    useMathText=True)
-            # ax1[1, 1].ticklabel_format(style='sci', axis='y', scilimits=(1, 1),
-            #                         useMathText=True)
-            # ax1[1, 1].ticklabel_format(style='sci', axis='x', scilimits=(0, -3),
-            #                         useMathText=True)
-
+                                       useMathText=True)
+            
             ax2[0].yaxis.set_major_locator(MaxNLocator(3, min_n_ticks=2,
-                                                      prune='both'))
+                                                       prune='both'))
             ax2[0].yaxis.set_minor_locator(MaxNLocator(12, min_n_ticks=9,
-                                                      prune='both'))
+                                                       prune='both'))
             ax2[1].yaxis.set_major_locator(MaxNLocator(3, min_n_ticks=3,
-                                                      prune='both'))
+                                                       prune='both'))
             ax2[1].yaxis.set_minor_locator(MaxNLocator(15, min_n_ticks=9,
-                                                      prune='both'))
+                                                       prune='both'))
             ax2[1].xaxis.set_major_locator(MaxNLocator(3, min_n_ticks=3,
-                                                      prune='both'))
+                                                       prune='both'))
             ax2[1].xaxis.set_minor_locator(MaxNLocator(12, min_n_ticks=9,
-                                                      prune='both'))
+                                                       prune='both'))
+            
             ax2[0].ticklabel_format(style='sci', axis='x', scilimits=(0, 0),
                                     useMathText=True)
             ax2[0].ticklabel_format(style='sci', axis='y', scilimits=(-1, -1),
@@ -644,13 +621,7 @@ class Gibbs(object):
             ax1[0, 1].set_yticks([])
             ax1[1, 1].set_yticks([])
             handles, labels = ax0.get_legend_handles_labels()
-            l = fig.legend(handles, labels, loc='lower center', ncols=2)
-            # for vpack in l._legend_handle_box.get_children():
-            #     for hpack in vpack.get_children():
-            #         hpack.get_children()[0].set_width(0)
-        # fig.tight_layout(rect=(0, 0.1, 1, 1))
-        # ax[0].xaxis.set_major_locator(MultipleLocator(wmin+(wmax-wmin)/3))
-        # ax[1].xaxis.set_major_locator(MultipleLocator(rmin+(rmax-rmin)/3))
+            fig.legend(handles, labels, loc='lower center', ncols=2)
         if save:
             if component is not None:
                 plt.savefig(f'basicrta-{self.cutoff}/{self.residue}/'
@@ -667,31 +638,31 @@ class Gibbs(object):
         plt.show()
 
     def plot_gibbs(self, scale=1.5, sparse=1, save=False):
-            cmap = mpl.colormaps['tab10']
-            rp = self.processed_results
+        cmap = mpl.colormaps['tab10']
+        rp = self.processed_results
 
-            fig, ax = plt.subplots(2, figsize=(4*scale, 3*scale), sharex=True)
-            [ax[0].plot(rp.iteration[rp.labels == i][::sparse],
-                        rp.weights[rp.labels == i][::sparse], '.',
-                        label=f'{i}', color=cmap(i))
-             for i in np.unique(rp.labels)]
-            ax[0].set_yscale('log')
-            ax[0].set_ylabel(r'$\pi_k$')
-            [ax[1].plot(rp.iteration[rp.labels == i][::sparse],
-                        rp.rates[rp.labels == i][::sparse], '.', label=f'{i}',
-                        color=cmap(i)) for i in np.unique(rp.labels)]
-            ax[1].set_yscale('log')
-            ax[1].set_ylabel(r'\lambda_k (ns$^{-1}$)')
-            ax[1].set_xlabel('sample')
-            ax[0].legend(title='component')
-            ax[1].legend(title='component')
-            plt.tight_layout()
-            if save:
-                plt.savefig(f'basicrta-{self.cutoff}/{self.residue}/'
-                            'plot_results.png', bbox_inches='tight')
-                plt.savefig(f'basicrta-{self.cutoff}/{self.residue}/'
-                            'plot_results.pdf', bbox_inches='tight')
-            plt.show()
+        fig, ax = plt.subplots(2, figsize=(4*scale, 3*scale), sharex=True)
+        [ax[0].plot(rp.iteration[rp.labels == i][::sparse],
+                    rp.weights[rp.labels == i][::sparse], '.',
+                    label=f'{i}', color=cmap(i))
+         for i in np.unique(rp.labels)]
+        ax[0].set_yscale('log')
+        ax[0].set_ylabel(r'$\pi_k$')
+        [ax[1].plot(rp.iteration[rp.labels == i][::sparse],
+                    rp.rates[rp.labels == i][::sparse], '.', label=f'{i}',
+                    color=cmap(i)) for i in np.unique(rp.labels)]
+        ax[1].set_yscale('log')
+        ax[1].set_ylabel(r'\lambda_k (ns$^{-1}$)')
+        ax[1].set_xlabel('sample')
+        ax[0].legend(title='component')
+        ax[1].legend(title='component')
+        plt.tight_layout()
+        if save:
+            plt.savefig(f'basicrta-{self.cutoff}/{self.residue}/'
+                        'plot_results.png', bbox_inches='tight')
+            plt.savefig(f'basicrta-{self.cutoff}/{self.residue}/'
+                        'plot_results.pdf', bbox_inches='tight')
+        plt.show()
 
     def _estimate_params(self):
         rp = self.processed_results
@@ -718,11 +689,15 @@ class Gibbs(object):
         setattr(rp, 'intervals', np.array([wbounds, rbounds]))
 
     def estimate_tau(self):
-        """
-        Estimate the posterior maximum for the tau distribution
+        r"""
+        Estimate the posterior maximum and confidence interval (CI) for the
+        :math:`tau` distribution of the slowest process. NOTE: In the future 
+        this will return an array containing :math:`tau` and CI for all
+        clusters.
 
         :return: An array containing the posterior maximum and bounds of the
                  95% confidence interval in the format [LB, max, UB].
+        :rtype: list
         """
         rp = self.processed_results
 
@@ -733,9 +708,6 @@ class Gibbs(object):
 
         taus = 1 / rp.rates[rp.labels == index]
         ci = confidence_interval(taus)
-        citaus = taus[(taus > ci[0]) & (taus < ci[1])]
-        #bins = np.exp(np.linspace(np.log(citaus.min()), np.log(citaus.max()),
-        #                          20))
         bins = 15
         h = np.histogram(taus, bins=bins)
         indmax = h[0].argmax()
@@ -812,7 +784,7 @@ if __name__ == '__main__':
     parser.add_argument('--contacts')
     parser.add_argument('--resid', type=int, default=None)
     parser.add_argument('--nproc', type=int, default=1)
-    parser.add_argument('--niter', type=int, default=50000)
+    parser.add_argument('--niter', type=int, default=110000)
     parser.add_argument('--ncomp', type=int, default=15)
     args = parser.parse_args()
 

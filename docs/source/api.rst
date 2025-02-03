@@ -1,8 +1,13 @@
 API Documentation
 =================
 
-.. autosummary::
+.. autosummary:: 
    :toctree: autosummary
    :recursive:
 
-   basicrta
+   gibbs
+   contacts
+   cluster
+   kinetics
+   util
+

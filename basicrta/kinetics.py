@@ -1,14 +1,24 @@
-from basicrta.wdensity import WDensityAnalysis
+from tqdm import tqdm
+from basicrta.util import get_start_stop_frames
 import numpy as np
 import MDAnalysis as mda
 import os
-from tqdm import tqdm
-from basicrta.util import get_start_stop_frames
 import pickle
-# from MDAnalysis.lib.util import realpath
 
 
 class MapKinetics(object):
+    r"""
+    The MapKinetics class takes processed Gibbs sampler data (an instance of the
+    Gibbs class) and the contact file to create costomized trajectories,
+    containing all of `sel1` from the initial contact analysis and a single
+    `sel2` residue. 
+
+    :param gibbs: Processed instance of :class:`Gibbs` class
+    :type gibbs: str
+    :param contacts: Contact pickle file (`contacts-{cutoff}.pkl`)
+    :type contacts: str
+
+    """
     def __init__(self, gibbs, contacts):
         self.gibbs = gibbs
         self.cutoff = float(contacts.split('/')[-1].strip('.pkl').
@@ -67,6 +77,20 @@ class MapKinetics(object):
             j += len(tmp)
 
     def create_traj(self, top_n=None):
+        r"""
+        Create the customized trajectories for the individual mixture components
+        of the model. If `top_n` is None, a single trajectory is created
+        with all of `sel1` and a single `sel2` residue, with every contact
+        accounted for (ie. a single frame in the original trajectory may be
+        used multiple times due to multiple contacts formed with the `sel1`
+        residue of interest at that frame).
+
+        :param top_n: Number of frames desired for the individual trajectories
+                      (sorted in order of decreasing classification 
+                      probability).
+        :type top_n: int
+        """
+
         if os.path.exists(self.fulltraj) and top_n is None:
             raise FileExistsError(f'{self.fulltraj} exists, remove then rerun')
 
@@ -101,6 +125,19 @@ class MapKinetics(object):
                     W.write(ag1 + ag2.select_atoms(f'resid {int(tmp[i, 1])}'))
 
     def weighted_densities(self, step=1, top_n=None, filterP=0):
+        """
+        Create weighted densities based on the marginal posterior probabilities
+        of the model component classification. 
+
+        :param step: Use every `Nth` frame 
+        :type step: int
+        :param top_n: Use the `N` most likely frames for each component to
+                      compute the weighted densities from.
+        :type top_n: int
+        :param filterP: Probabilities less than `filterP` are not used in the
+                        weighted density calculation
+        :type filterP: float
+        """
         if not os.path.exists(self.fulltraj):
             self.create_traj()
 
@@ -177,7 +214,7 @@ if __name__ == "__main__":
     parser.add_argument("--step", type=int, nargs='?', default=1)
     parser.add_argument("--wdensity", action='store_true')
     args = parser.parse_args()
-    
+
     g = Gibbs().load(args.gibbs)
     mk = MapKinetics(g, args.contacts)
     mk.create_traj(top_n=args.top_n)

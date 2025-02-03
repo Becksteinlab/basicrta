@@ -1,5 +1,12 @@
 # Compiling basicrta's Documentation
 
+This package was written to perform the analyses in [Sexton_2024]. 
+
+.. [Sexton_2024] Sexton, R.; Fazel, M.; Schweiger, M.; Pressé, S.; 
+   Beckstein, O. Bayesian Nonparametric Analysis of Residence Times for 
+   Protein-Lipid Interactions in Molecular Dynamics Simulations. November 9, 
+   2024. https://doi.org/10.1101/2024.11.07.622502.
+
 The docs for this project are built with [Sphinx](http://www.sphinx-doc.org/en/master/).
 To compile the docs, first ensure that Sphinx and the ReadTheDocs theme are installed.
 
