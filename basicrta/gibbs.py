@@ -193,21 +193,21 @@ class Gibbs(object):
                       desc=f'{self.residue}-K{self.ncomp}',
                       position=self.loc, leave=False):
 
-            # compute probabilities
+            # compute probabilities (equation 9)
             tmp = weights*rates*np.exp(np.outer(-rates, self.times)).T
-            z = (tmp.T/tmp.sum(axis=1)).T
+            psample = (tmp.T/tmp.sum(axis=1)).T
 
             # sample indicator
-            s = np.argmax(rng.multinomial(1, z), axis=1)
+            z = np.argmax(rng.multinomial(1, psample), axis=1)
 
             # get indicator for each data point
-            inds = [np.where(s == i)[0] for i in range(self.ncomp)]
+            inds = [np.where(z == i)[0] for i in range(self.ncomp)]
 
             # compute total time and number of point for each component
             Ns = np.array([len(inds[i]) for i in range(self.ncomp)])
             Ts = np.array([self.times[inds[i]].sum() for i in range(self.ncomp)])
 
-            # sample posteriors
+            # sample posteriors (equations 7 and 8)
             weights = rng.dirichlet(self.whypers+Ns)
             rates = rng.gamma(self.rhypers[:, 0]+Ns, 1/(self.rhypers[:, 1]+Ts))
 
@@ -215,7 +215,7 @@ class Gibbs(object):
             if j % self.g == 0:
                 ind = j//self.g-1
                 self.mcweights[ind], self.mcrates[ind] = weights, rates
-                self.indicator[ind] = s
+                self.indicator[ind] = z
 
         self.save()
 
@@ -231,7 +231,7 @@ class Gibbs(object):
         from scipy import stats
 
         clu = getattr(mixture, method)
-        burnin_ind = self.burnin // g
+        burnin_ind = self.burnin // (self.g*self.gskip)
         data_len = len(self.times)
         wcutoff = 10 / data_len
 
