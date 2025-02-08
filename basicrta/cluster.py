@@ -28,11 +28,12 @@ class ProcessProtein(object):
     :type cutoff: float
     """
     
-    def __init__(self, niter, prot, cutoff):
+    def __init__(self, niter, prot, cutoff, gskip):
         self.residues = {}
         self.niter = niter
         self.prot = prot
         self.cutoff = cutoff
+        self.gskip = gskip
 
     def __getitem__(self, item):
         return getattr(self, item)
@@ -43,6 +44,7 @@ class ProcessProtein(object):
                 result = f'{adir}/gibbs_{self.niter}.pkl'
                 g = Gibbs().load(result)
                 if process:
+                    g.gskip = self.gskip
                     g.process_gibbs()
             except ValueError:
                 result = None

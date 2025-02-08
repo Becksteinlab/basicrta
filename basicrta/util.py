@@ -704,7 +704,8 @@ def mixture_and_plot(gibbs, scale=2, sparse=1, remove_noise=False, wlim=None,
     else:
         wmin, wmax = wcutoff, 2
 
-    weights, rates = gibbs.mcweights[burnin_ind:], gibbs.mcrates[burnin_ind:]
+    weights = gibbs.mcweights[burnin_ind::gibbs.gskip] 
+    rates = gibbs.mcrates[burnin_ind::gibbs.gskip]
     lens = np.array([len(row[row > wcutoff]) for row in weights])
     lmode = stats.mode(lens).mode 
     train_param = lmode

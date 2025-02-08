@@ -231,11 +231,12 @@ class Gibbs(object):
         from scipy import stats
 
         clu = getattr(mixture, method)
-        burnin_ind = self.burnin // (self.g*self.gskip)
+        burnin_ind = self.burnin // self.g
         data_len = len(self.times)
         wcutoff = 10 / data_len
 
-        weights, rates = self.mcweights[burnin_ind:], self.mcrates[burnin_ind:]
+        weights = self.mcweights[burnin_ind::self.gskip]
+        rates = self.mcrates[burnin_ind::self.gskip]
         lens = np.array([len(row[row > wcutoff]) for row in weights])
         lmode = stats.mode(lens).mode
         train_param = lmode
@@ -258,7 +259,7 @@ class Gibbs(object):
         all_labels = r.predict(np.log(data))
 
         if self.indicator is not None:
-            indicator = self.indicator[burnin_ind:]
+            indicator = self.indicator[burnin_ind::self.gskip]
         else:
             indicator = self._sample_indicator()
 
@@ -285,13 +286,15 @@ class Gibbs(object):
         data_len = len(self.times)
         wcutoff = 10/data_len
         burnin_ind = self.burnin//self.g
-        inds = np.where(self.mcweights[burnin_ind:] > wcutoff)
+        inds = np.where(self.mcweights[burnin_ind::self.gskip] > wcutoff)
         indices = (np.arange(self.burnin, self.niter + 1, self.g*self.gskip)
                    [inds[0]] // self.g)
-        weights, rates = self.mcweights[burnin_ind:], self.mcrates[burnin_ind:]
+        weights = self.mcweights[burnin_ind::self.gskip] 
+        rates = self.mcrates[burnin_ind::self.gskip]
         fweights, frates = weights[inds], rates[inds]
 
-        lens = [len(row[row > wcutoff]) for row in self.mcweights[burnin_ind:]]
+        lens = [len(row[row > wcutoff]) for row in
+                self.mcweights[burnin_ind::self.gskip]]
         lmode = stats.mode(lens).mode
 
         self.cluster(n_init=117, n_components=lmode)
@@ -320,8 +323,8 @@ class Gibbs(object):
         mixture_and_plot(self, remove_noise=remove_noise, **kwargs)
 
     def _sample_indicator(self):
-        indicator = np.zeros(((self.niter+1)//self.g, self.times.shape[0]),
-                             dtype=np.uint8)
+        indicator = np.zeros(((self.niter+1)//(self.g*self.gskip), 
+                              self.times.shape[0]), dtype=np.uint8)
         burnin_ind = self.burnin//self.g
         for i, (w, r) in enumerate(zip(self.mcweights, self.mcrates)):
             # compute probabilities
@@ -332,7 +335,7 @@ class Gibbs(object):
             s = np.argmax(rng.multinomial(1, z), axis=1)
             indicator[i] = s
         setattr(self, 'indicator', indicator)
-        return indicator[burnin_ind:]
+        return indicator[burnin_ind::self.gskip]
 
     def save(self):
         """
