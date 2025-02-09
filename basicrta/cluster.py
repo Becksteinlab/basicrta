@@ -53,6 +53,12 @@ class ProcessProtein(object):
             result = None
         return result
 
+    def _single_result(self, adir):
+        result = self._single_residue(adir)
+        residue = adir.split('/')[-1]
+        self.residues[residue] = result
+
+
     def reprocess(self, nproc=1):
         """Rerun processing and clustering on :class:`Gibbs` data.
 
@@ -77,7 +83,7 @@ class ProcessProtein(object):
             except KeyboardInterrupt:
                 pass
 
-    def collect_results(self):
+    def collect_results(self, nproc=1):
         """Collect names of results for each residue in the `basicrta-{cutoff}`
         directory in a dictionary stored in :attr:`ProcessProtein.results`.
         """
@@ -87,13 +93,19 @@ class ProcessProtein(object):
         sorted_inds = (np.array([int(adir.split('/')[-1][1:]) for adir in dirs])
                        .argsort())
         dirs = dirs[sorted_inds]
-        try:
-            for adir in tqdm(dirs, desc='collecting results'):
-                result = self._single_residue(adir)
-                residue = adir.split('/')[-1]
-                self.residues[residue] = result
-        except KeyboardInterrupt:
-            pass
+        with (Pool(nproc, initializer=tqdm.set_lock,
+                   initargs=(Lock(),)) as p):
+            try:
+                for _ in tqdm(p.istarmap(self._single_result, dirs),
+                              total=len(dirs), position=0,
+                              desc='overall progress'):
+                    pass
+                #for adir in tqdm(dirs, desc='collecting results'):
+                #    result = self._single_residue(adir)
+                #    residue = adir.split('/')[-1]
+                #    self.residues[residue] = result
+                except KeyboardInterrupt:
+                    pass
 
     def get_taus(self):
         r"""Get :math:`\tau` and 95\% confidence interval bounds for the slowest
