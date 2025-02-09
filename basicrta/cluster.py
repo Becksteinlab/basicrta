@@ -104,8 +104,8 @@ class ProcessProtein(object):
                 #    result = self._single_residue(adir)
                 #    residue = adir.split('/')[-1]
                 #    self.residues[residue] = result
-                except KeyboardInterrupt:
-                    pass
+            except KeyboardInterrupt:
+                pass
 
     def get_taus(self):
         r"""Get :math:`\tau` and 95\% confidence interval bounds for the slowest
