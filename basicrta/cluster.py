@@ -85,7 +85,7 @@ class ProcessProtein(object):
             except KeyboardInterrupt:
                 pass
 
-    def get_taus(self):
+    def get_taus(self, nproc=1):
         r"""Get :math:`\tau` and 95\% confidence interval bounds for the slowest
         process for each residue. 
         
@@ -96,10 +96,14 @@ class ProcessProtein(object):
         """
         from basicrta.util import get_bars
 
+        dirs = np.array(glob(f'basicrta-{self.cutoff}/?[0-9]*'))
+        sorted_inds = (np.array([int(adir.split('/')[-1][1:]) for adir in dirs])
+                       .argsort())
+        dirs = dirs[sorted_inds]
         with (Pool(nproc, initializer=tqdm.set_lock,
                    initargs=(Lock(),)) as p):
             try:
-                for _ in tqdm(p.istarmap(self._single_residue, inarr),
+                for _ in tqdm(p.imap(self._single_residue, dirs),
                               total=len(dirs), position=0,
                               desc='overall progress'):
                     pass
@@ -109,15 +113,7 @@ class ProcessProtein(object):
         taus = []
         for res in tqdm(self.residues, total=len(self.residues)):
             taus.append(res.tau)
-            #if self.residues[res] is None:
-            #    result = [0, 0, 0]
-            #else:
-            #    try:
-            #        gib = Gibbs().load(self.residues[res])
-            #        result = gib.estimate_tau()
-            #    except AttributeError:
-            #        result = [0, 0, 0]
-            #taus.append(result)
+        
         taus = np.array(taus)
         bars = get_bars(taus)
         setattr(self, 'taus', taus[:, 1])
@@ -132,7 +128,9 @@ class ProcessProtein(object):
         :param fname: Filename to save data to.
         :type fname: str, optional
         """
-        taus, bars = self.get_taus()
+        if self.taus is None:
+            taus, bars = self.get_taus()
+
         keys = self.residues.keys()
         residues = np.array([int(res[1:]) for res in keys])
         data = np.stack((residues, taus, bars[0], bars[1]))
@@ -148,7 +146,9 @@ class ProcessProtein(object):
         if len(self.residues) == 0:
             print('run `collect_residues` then rerun')
 
-        taus, bars = self.get_taus()
+        if self.taus is None:
+            self.get_taus()
+
         residues = list(self.residues.keys())
         residues = [res.split('/')[-1] for res in residues]
 
@@ -163,7 +163,9 @@ class ProcessProtein(object):
         r"""Add :math:`\tau` to b-factors in the specified structure. Saves
         structure with b-factors to `tau_bcolored.pdb`. 
         """
-        taus, bars = self.get_taus()
+        if self.taus is None:
+            taus, bars = self.get_taus()
+
         cis = bars[1]+bars[0]
         errs = taus/cis
         errs[errs != errs] = 0
