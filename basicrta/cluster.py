@@ -96,6 +96,16 @@ class ProcessProtein(object):
         """
         from basicrta.util import get_bars
 
+        with (Pool(nproc, initializer=tqdm.set_lock,
+                   initargs=(Lock(),)) as p):
+            try:
+                for _ in tqdm(p.istarmap(self._single_residue, inarr),
+                              total=len(dirs), position=0,
+                              desc='overall progress'):
+                    pass
+            except KeyboardInterrupt:
+                pass
+        
         taus = []
         for res in tqdm(self.residues, total=len(self.residues)):
             taus.append(res.tau)
