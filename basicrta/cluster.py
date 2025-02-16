@@ -142,7 +142,7 @@ class ProcessProtein(object):
         setattr(self, 'bars', bars)
         setattr(self, 'residues', np.array(residues))
         setattr(self, 'files', np.array(results))
-        return taus[:, 1], bars
+        #return taus[:, 1], bars
 
     def write_data(self, fname='tausout'):
         r"""Write :math:`\tau` values with 95\% confidence interval to a numpy
