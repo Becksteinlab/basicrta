@@ -692,7 +692,7 @@ def extract_data(gibbs):
     return data, train_inds
 
 def mixture_and_plot(gibbs, scale=2, sparse=1, remove_noise=False, wlim=None,
-                     rlim=None, **kwargs):
+                     rlim=None, show=True, **kwargs):
     from scipy import stats
     from matplotlib.ticker import MaxNLocator
 
@@ -1193,10 +1193,10 @@ def mixture_and_plot(gibbs, scale=2, sparse=1, remove_noise=False, wlim=None,
             figp.savefig(f"{basename}_validate.{suffix}",
                          bbox_inches='tight')
 
-    figa.show()
-    figt.show()
-    figp.show()
-    plt.close('all')
+    if show:
+        figa.show()
+        figt.show()
+        figp.show()
     return all_labels, presorts
 
 

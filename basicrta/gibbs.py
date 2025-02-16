@@ -274,7 +274,7 @@ class Gibbs(object):
         setattr(self.processed_results, 'indicator', pindicator)
         setattr(self.processed_results, 'labels', all_labels)
 
-    def process_gibbs(self):
+    def process_gibbs(self, show=True):
         r"""
         Process the samples collected from the Gibbs sampler.
         :meth:`process_gibbs` can be called multiple times to check the
@@ -298,7 +298,7 @@ class Gibbs(object):
         lmode = stats.mode(lens).mode
 
         self.cluster(n_init=117, n_components=lmode)
-        labels, presorts = mixture_and_plot(self)
+        labels, presorts = mixture_and_plot(self, show=show)
         setattr(self.processed_results, 'labels', labels)
         setattr(self.processed_results, 'indicator',
                 self.processed_results.indicator[:, presorts])
@@ -712,8 +712,8 @@ class Gibbs(object):
 
         taus = 1 / rp.rates[rp.labels == index]
         ci = confidence_interval(taus)
-        bins = 15
-        h = np.histogram(taus, bins=bins)
+        bins = 10
+        h = np.histogram(taus, bins='sqrt')
         indmax = h[0].argmax()
         val = 0.5 * (h[1][:-1][indmax] + h[1][1:][indmax])
         return [ci[0], val, ci[1]]
