@@ -703,6 +703,7 @@ class Gibbs(object):
                  95% confidence interval in the format [LB, max, UB].
         :rtype: list
         """
+        bintype='sqrt'
         rp = self.processed_results
 
         imaxs = self.processed_results.indicator.max(axis=0)
@@ -711,12 +712,18 @@ class Gibbs(object):
         index = rp.parameters[inds, 1].argmin()
 
         taus = 1 / rp.rates[rp.labels == index]
+        wts = rp.weights[rp.labels == index]
         ci = confidence_interval(taus)
-        bins = 10
-        h = np.histogram(taus, bins='sqrt')
-        indmax = h[0].argmax()
-        val = 0.5 * (h[1][:-1][indmax] + h[1][1:][indmax])
-        return [ci[0], val, ci[1]]
+        #h = np.histogram(taus, bins='sqrt')
+        #indmax = h[0].argmax()
+        #val = 0.5 * (h[1][:-1][indmax] + h[1][1:][indmax])
+
+        wbins = np.histogram_bin_edges(wts, bins=bintype)
+        rbins = np.histogram_bin_edges(taus, bins=bintype)
+        vals, ws, rs = np.histogram2d(wts, taus, bins=[wbins,rbins])
+        indmax = np.unravel_index(vals.argmax(), vals.shape)
+        rval = 0.5 * (rs[:-1] + rs[1:])[indmax[1]]
+        return [ci[0], rval, ci[1]]
 
     def plot_surv(self, scale=1, remove_noise=False, save=False, xlim=None,
                   ylim=(1e-6, 5), xmajor=None, xminor=None):
