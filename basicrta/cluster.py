@@ -3,7 +3,9 @@ import gc
 import numpy as np
 from tqdm import tqdm
 from multiprocessing import Pool, Lock
+from glob import glob
 import MDAnalysis as mda
+from MDAnalysis.analysis.base import Results
 from basicrta import istarmap
 from basicrta.gibbs import Gibbs
 gc.enable()
@@ -28,12 +30,13 @@ class ProcessProtein(object):
     :type cutoff: float
     """
     
-    def __init__(self, niter, prot, cutoff, gskip, taus=None, bars=None):
-        self.residues = {}
+    def __init__(self, niter, prot, cutoff, gskip, burnin, taus=None, bars=None):
+        self.residues = Results()
         self.niter = niter
         self.prot = prot
         self.cutoff = cutoff
         self.gskip = gskip
+        self.burnin = burnin
         self.taus = taus
         self.bars = bars
 
@@ -48,9 +51,10 @@ class ProcessProtein(object):
                 g = Gibbs().load(result)
                 if process:
                     g.gskip = self.gskip
+                    g.burnin = self.burnin
                     g.process_gibbs()
                 tau = g.estimate_tau()
-            except ValueError:
+            except:
                 result = None
                 tau = [0, 0, 0]
         else:
@@ -58,8 +62,11 @@ class ProcessProtein(object):
             tau = [0, 0, 0]
 
         residue = adir.split('/')[-1]
-        setattr(self.residues, 'f{residue}', result)
-        setattr(self.residues.residue, 'tau', tau)
+        return residue, tau, result
+        #setattr(self.residues, f'{residue}', Results())
+        #setattr(self.residues[f'{residue}'], 'file', result)
+        #setattr(self.residues[f'{residue}'], 'tau', tau)
+        #return self
 
     def reprocess(self, nproc=1):
         """Rerun processing and clustering on :class:`Gibbs` data.
@@ -68,7 +75,7 @@ class ProcessProtein(object):
                       residues.
         :type nproc: int
         """
-        from glob import glob
+        from basicrta.util import get_bars
 
         dirs = np.array(glob(f'basicrta-{self.cutoff}/?[0-9]*'))
         sorted_inds = (np.array([int(adir.split('/')[-1][1:]) for adir in dirs])
@@ -78,12 +85,24 @@ class ProcessProtein(object):
         with (Pool(nproc, initializer=tqdm.set_lock,
                    initargs=(Lock(),)) as p):
             try:
-                for _ in tqdm(p.istarmap(self._single_residue, inarr),
+                residues, taus, results = [], [], []
+                for residue, tau, result in tqdm(p.istarmap(self._single_residue, inarr),
                               total=len(dirs), position=0,
                               desc='overall progress'):
+                    residues.append(residue)
+                    taus.append(tau)
+                    results.append(result)
+                    gc.collect()
                     pass
             except KeyboardInterrupt:
                 pass
+
+        taus = np.array(taus)
+        bars = get_bars(taus)
+        setattr(self, 'taus', taus[:, 1])
+        setattr(self, 'bars', bars)
+        setattr(self, 'residues', np.array(residues))
+        setattr(self, 'files', np.array(results))
 
     def get_taus(self, nproc=1):
         r"""Get :math:`\tau` and 95\% confidence interval bounds for the slowest
@@ -103,21 +122,26 @@ class ProcessProtein(object):
         with (Pool(nproc, initializer=tqdm.set_lock,
                    initargs=(Lock(),)) as p):
             try:
-                for _ in tqdm(p.imap(self._single_residue, dirs),
-                              total=len(dirs), position=0,
-                              desc='overall progress'):
-                    pass
+                residues, taus, results = [], [], []
+                for residue, tau, result in tqdm(p.imap(self._single_residue, dirs),
+                                                 total=len(dirs), position=0,
+                                                 desc='overall progress'):
+                    residues.append(residue)
+                    taus.append(tau)
+                    results.append(result)
             except KeyboardInterrupt:
                 pass
         
-        taus = []
-        for res in tqdm(self.residues, total=len(self.residues)):
-            taus.append(res.tau)
+        #taus = []
+        #for res in tqdm(self.residues, total=len(self.residues)):
+        #    taus.append(res.tau)
         
         taus = np.array(taus)
         bars = get_bars(taus)
         setattr(self, 'taus', taus[:, 1])
         setattr(self, 'bars', bars)
+        setattr(self, 'residues', np.array(residues))
+        setattr(self, 'files', np.array(results))
         return taus[:, 1], bars
 
     def write_data(self, fname='tausout'):
@@ -143,18 +167,16 @@ class ProcessProtein(object):
         major and minor ticks.
         """
         from basicrta.util import plot_protein
-        if len(self.residues) == 0:
-            print('run `collect_residues` then rerun')
 
         if self.taus is None:
             self.get_taus()
 
-        residues = list(self.residues.keys())
+        residues = self.residues
         residues = [res.split('/')[-1] for res in residues]
 
-        exclude_inds = np.where(bars < 0)[1] 
-        taus = np.delete(taus, exclude_inds)
-        bars = np.delete(bars, exclude_inds, axis=1)
+        exclude_inds = np.where(self.bars < 0)[1] 
+        taus = np.delete(self.taus, exclude_inds)
+        bars = np.delete(self.bars, exclude_inds, axis=1)
         residues = np.delete(residues, exclude_inds)
 
         plot_protein(residues, taus, bars, self.prot, **kwargs)

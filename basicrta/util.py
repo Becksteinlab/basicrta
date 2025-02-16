@@ -1196,6 +1196,7 @@ def mixture_and_plot(gibbs, scale=2, sparse=1, remove_noise=False, wlim=None,
     figa.show()
     figt.show()
     figp.show()
+    plt.close('all')
     return all_labels, presorts
 
 
