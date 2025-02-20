@@ -193,7 +193,7 @@ class Gibbs(object):
                       desc=f'{self.residue}-K{self.ncomp}',
                       position=self.loc, leave=False):
 
-            # compute probabilities (equation 9)
+            # compute probabilities (equation 7)
             tmp = weights*rates*np.exp(np.outer(-rates, self.times)).T
             psample = (tmp.T/tmp.sum(axis=1)).T
 
@@ -207,7 +207,7 @@ class Gibbs(object):
             Ns = np.array([len(inds[i]) for i in range(self.ncomp)])
             Ts = np.array([self.times[inds[i]].sum() for i in range(self.ncomp)])
 
-            # sample posteriors (equations 7 and 8)
+            # sample posteriors (equations 8 and 9)
             weights = rng.dirichlet(self.whypers+Ns)
             rates = rng.gamma(self.rhypers[:, 0]+Ns, 1/(self.rhypers[:, 1]+Ts))
 
