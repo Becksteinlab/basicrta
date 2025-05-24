@@ -727,7 +727,8 @@ class Gibbs(object):
         return [ci[0], val, ci[1]]
 
     def plot_surv(self, scale=1, remove_noise=False, save=False, xlim=None,
-                  ylim=(1e-6, 5), xmajor=None, xminor=None):
+                  ylim=(1e-6, 5), xmajor=None, xminor=None, xscale='linear',
+                  yscale='log'):
         """
         Plot the survival function with the exponential mixture components where
         parameters are determined from the clustering results.
@@ -774,7 +775,8 @@ class Gibbs(object):
                  color=cmap(i)) for i in np.unique(uniq_labels)]
         ax.set_ylim(ylim)
         ax.set_xlim(xlim)
-        ax.set_yscale('log')
+        ax.set_yscale(yscale)
+        ax.set_xscale(xscale)
         ax.set_ylabel('survival function $s$')
         ax.set_xlabel(r'$t$ [ns]')
         ax.set_yticks([1, 1e-2, 1e-4])
