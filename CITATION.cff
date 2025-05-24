@@ -60,6 +60,6 @@ abstract: >-
   Bayesian nonparametric analysis of binding event times in
   MD simulations.
 license: GPL-3.0
-commit: ddb139abcc0032f9107c7b2bc08cce8f6c7ead59
-version: '0.2'
-date-released: '2024-12-14'
+commit: 974cd92c102a90e587421fcb43a12d8b6e26e3e0
+version: '1.0'
+date-released: '2025-05-24'
