@@ -28,7 +28,9 @@ A package to extract binding kinetics from molecular dynamics simulations based
 on Sexton (2024) [^1]. 
 
 [^1]: Sexton, R.; Fazel, M.; Schweiger, M.; Pressé, S.; Beckstein, O. Bayesian Nonparametric Analysis of Residence Times for 
-   Protein-Lipid Interactions in Molecular Dynamics Simulations. bioRxiv. November 9, 2024. https://doi.org/10.1101/2024.11.07.622502.
+   Protein-Lipid Interactions in Molecular Dynamics Simulations. *Journal of Chemical Theory and Computation* 
+   **2025** *21* (8), 4203-4220
+   DOI: `10.1021/acs.jctc.4c01522 <http://doi.org/10.1021/acs.jctc.4c01522>`_ 
 
 basicrta is bound by a [Code of Conduct](https://github.com/becksteinlab/basicrta/blob/main/CODE_OF_CONDUCT.md).
 
