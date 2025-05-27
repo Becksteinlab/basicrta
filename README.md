@@ -25,7 +25,7 @@ Bayesian Single-Cutoff Residence Time Analysis (basicrta)
 [url_zenodo]: https://doi.org/10.5281/zenodo.13877225
 
 A package to extract binding kinetics from molecular dynamics simulations based
-on Sexton (2024) [^1]. 
+on Sexton (2025) [^1]. 
 
 [^1]: Sexton, R.; Fazel, M.; Schweiger, M.; Pressé, S.; Beckstein, O. Bayesian Nonparametric Analysis of Residence Times for 
    Protein-Lipid Interactions in Molecular Dynamics Simulations. *Journal of Chemical Theory and Computation* 
