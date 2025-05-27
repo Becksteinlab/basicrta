@@ -20,8 +20,8 @@ abstract: basicrta is an open-source Python package developed for the
   describes molecular events responsible for the broad range of kinetic rates.
 message: >-
   If you use this software, please cite it using the
-  preferred citation (JCTC DOI ) together with any
-  other references.  
+  preferred citation (JCTC DOI 10.1021/acs.jctc.4c01522) 
+  together with any other references.  
 authors:
   - given-names: Ricky
     family-names: Sexton
