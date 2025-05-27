@@ -8,8 +8,9 @@ Contact Analysis
 ================ 
 
 The basicrta workflow starts with collecting contacts between two atom groups
-``sel1`` and ``sel2`` based on a single ``cutoff`` using contacts.py.::
-  python -m basicrta.contacts --top top.pdb --traj traj.xtc --sel1 "protein"
+``sel1`` and ``sel2`` based on a single ``cutoff`` using contacts.py. ::
+
+  python -m basicrta.contacts --top top.pdb --traj traj.xtc --sel1 "protein" 
   --sel2 "resname CHOL" --cutoff 7.0 --nproc 4
 
 This will create two contact maps: ``contacts.npy`` and ``contacts_7.0.pkl``.
@@ -25,10 +26,14 @@ Gibbs Sampler
 Next the contact map is used to collect the contacts between a specified residue
 of ``sel1`` and each residue of the ``sel2`` group. The contact durations
 (residence times) are then used as input data for the Gibbs sampler. A specific
-residue of ``sel1`` can be used to run a Gibbs sampler for only that residue :: 
+residue of ``sel1`` can be used to run a Gibbs sampler for only that residue 
+::
+  
   python -m basicrta.gibbs --contacts contacts_7.0.pkl --nproc 5 --resid 313
+
 or if ``resid`` is left out, a Gibbs sampler will be executed for all ``sel1``
 residues in the contact map. ::
+
   python -m basicrta.gibbs --contacts contacts_7.0.pkl --nproc 5
 
 
@@ -37,6 +42,7 @@ Clustering
 
 Next the samples obtained from the Gibbs sampler are processed and clustered. 
 ::
+  
   python -m basicrta.cluster --niter 110000 --nproc 3 --cutoff 7.0 --prot b2ar
 
 The ``prot`` argument is used to create rectangles in the :math:`\tau` vs resid
@@ -65,22 +71,26 @@ Kinetic Mapping
 
 The kinetically mapped trajectory and weighted densities can be created using 
 ``kinetics.py``. ::
+
   python -m basicrta.kinetics --gibbs basicrta_7.0/W313/gibbs_110000.pkl
   --contacts contacts_7.0.pkl --wdensity
 
 To create only the mapped trajectory, leave out the ``wdensity`` flag.  
 ::
+
   python -m basicrta.kinetics --gibbs basicrta_7.0/W313/gibbs_110000.pkl
   --contacts contacts_7.0.pkl
 
 This can also be done using the ``top_n`` most likely frames belonging to each
 component of the exponential mixture model. ::
+
   python -m basicrta.kinetics --gibbs basicrta_7.0/W313/gibbs_110000.pkl
   --contacts contacts_7.0.pkl --top_n 500
 
 Weighted densities can be computed over the ``top_n`` frames, over the whole
 trajectory, or by using the ``step`` argument in combination with ``top_n`` or
 the whole trajectory. ::
+
   python -m basicrta.kinetics --gibbs basicrta_7.0/W313/gibbs_110000.pkl
   --contacts contacts_7.0.pkl --step 100
 
