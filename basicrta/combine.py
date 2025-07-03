@@ -58,15 +58,11 @@ def main():
         print("ERROR: At least 2 contact files are required for combining")
         return 1
     
-    # Check if output file exists and warn
     if os.path.exists(args.output):
-        response = input(f"Output file {args.output} already exists. Overwrite? (y/N): ")
-        if response.lower() not in ('y', 'yes'):
-            print("Operation cancelled.")
-            return 1
+        print(f"ERROR: Output file {args.output} already exists")
+        return 1
     
     try:
-        # Create combiner and run
         combiner = CombineContacts(
             contact_files=args.contacts,
             output_name=args.output,
