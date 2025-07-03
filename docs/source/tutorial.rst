@@ -13,7 +13,7 @@ The basicrta workflow starts with collecting contacts between two atom groups
   python -m basicrta.contacts --top top.pdb --traj traj.xtc --sel1 "protein" 
   --sel2 "resname CHOL" --cutoff 7.0 --nproc 4
 
-This will create two contact maps: ``contacts.npy`` and ``contacts_7.0.pkl``.
+This will create two contact maps: ``contacts.pkl`` and ``contacts_7.0.pkl``.
 The first is used to map all contacts defined with a 10 |AA| cutoff, upon which
 the cutoff is imposed and a new contact map is created for each desired cutoff
 value (for storage reasons this may change in the future). The protein residues
