@@ -21,3 +21,8 @@ The rules for this file:
 
 **2024**
 - Ricky Sexton <@rsexton2>
+- Oliver Beckstein <@orbeckst>
+- Ian Kenney <@ianmkenney>
+
+**2025**
+- Rekha Joshi <@rjoshi44>
