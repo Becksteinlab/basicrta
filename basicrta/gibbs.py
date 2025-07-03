@@ -52,6 +52,15 @@ class ParallelGibbs(object):
         with open(self.contacts, 'r+b') as f:
             contacts = pickle.load(f)
 
+        # Check if this is a combined contact file
+        metadata = contacts.dtype.metadata
+        is_combined = metadata and 'n_trajectories' in metadata and metadata['n_trajectories'] > 1
+        if is_combined:
+            print(f"WARNING: Using combined contact file with {metadata['n_trajectories']} trajectories.")
+            print("WARNING: Kinetic clustering is not yet supported for combined contacts.")
+            print("WARNING: The Gibbs sampler will pool all residence times together.")
+            print("WARNING: Trajectory source information is available but not used in kinetic clustering.")
+
         protids = np.unique(contacts[:, 0])
         if not run_resids:
             run_resids = protids
@@ -71,7 +80,7 @@ class ParallelGibbs(object):
                          run_resids])
         residues = residues[inds]
         input_list = [[residues[i], times[i].copy(), i % self.nproc,
-                       self.ncomp, self.niter, self.cutoff, g] for i in
+                       self.ncomp, self.niter, self.cutoff, g, is_combined] for i in
                       range(len(residues))]
 
         del contacts, times
@@ -227,6 +236,17 @@ class Gibbs(object):
         :param method: Mixture method to use
         :type method: str
         """
+        # Check if this Gibbs result was created from combined contact data
+        if hasattr(self, '_from_combined_contacts') and self._from_combined_contacts:
+            raise NotImplementedError(
+                "Kinetic clustering is not yet supported for combined contact data. "
+                "The trajectory source information needed for proper kinetic clustering "
+                "is available in the combined contact files but not yet utilized in the "
+                "clustering algorithm. For now, analyze each trajectory separately for "
+                "kinetic clustering, or use the combined data only for residence time "
+                "distribution analysis."
+            )
+            
         from sklearn import mixture
         from scipy import stats
 

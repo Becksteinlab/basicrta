@@ -199,3 +199,26 @@ class TestCombineContacts:
         # Should not raise error when validation is skipped
         output_file = combiner.run()
         assert os.path.exists(output_file)
+        
+    def test_combined_contacts_detection(self):
+        """Test that combined contact files are properly detected."""
+        # Create and combine contacts
+        self.create_mock_contacts("contacts1.pkl", n_contacts=30)
+        self.create_mock_contacts("contacts2.pkl", n_contacts=40, traj_name="test2.xtc")
+        
+        combiner = CombineContacts(
+            contact_files=["contacts1.pkl", "contacts2.pkl"],
+            output_name="combined.pkl"
+        )
+        
+        combiner.run()
+        
+        # Load combined file and check metadata
+        with open("combined.pkl", 'rb') as f:
+            combined = pickle.load(f)
+            
+        metadata = combined.dtype.metadata
+        assert 'n_trajectories' in metadata
+        assert metadata['n_trajectories'] == 2
+        assert 'source_files' in metadata
+        assert len(metadata['source_files']) == 2
