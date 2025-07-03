@@ -1,55 +1,62 @@
-# Combining Contact Timeseries from Multiple Repeats
+Combining Contact Timeseries from Multiple Repeats
+==================================================
 
 This functionality allows you to combine contact timeseries from multiple repeat runs to analyze pooled data and calculate posteriors from all data together, rather than analyzing each run separately.
 
-## Use Cases
+Use Cases
+---------
 
 - Analyze data from multiple repeat simulations together
 - Pool binding events from multiple trajectories for better statistics
 - Calculate combined residence time distributions and confidence intervals
 
-## Usage
+Usage
+-----
 
-### 1. Command Line Interface
+Command Line Interface
+~~~~~~~~~~~~~~~~~~~~~~
 
 After generating contact files for each repeat run individually:
 
-```bash
-# Run contact analysis for each repeat
-python -m basicrta.contacts --top sys.pdb --traj run1.xtc --sel1 "protein" --sel2 "resname CHOL" --cutoff 7.0
-mv contacts_7.0.pkl contacts_run1_7.0.pkl
+.. code-block:: bash
 
-python -m basicrta.contacts --top sys.pdb --traj run2.xtc --sel1 "protein" --sel2 "resname CHOL" --cutoff 7.0  
-mv contacts_7.0.pkl contacts_run2_7.0.pkl
+   # Run contact analysis for each repeat
+   python -m basicrta.contacts --top sys.pdb --traj run1.xtc --sel1 "protein" --sel2 "resname CHOL" --cutoff 7.0
+   mv contacts_7.0.pkl contacts_run1_7.0.pkl
 
-python -m basicrta.contacts --top sys.pdb --traj run3.xtc --sel1 "protein" --sel2 "resname CHOL" --cutoff 7.0
-mv contacts_7.0.pkl contacts_run3_7.0.pkl
+   python -m basicrta.contacts --top sys.pdb --traj run2.xtc --sel1 "protein" --sel2 "resname CHOL" --cutoff 7.0  
+   mv contacts_7.0.pkl contacts_run2_7.0.pkl
 
-# Combine the contact files
-python -m basicrta.combine --contacts contacts_run1_7.0.pkl contacts_run2_7.0.pkl contacts_run3_7.0.pkl --output combined_contacts_7.0.pkl
+   python -m basicrta.contacts --top sys.pdb --traj run3.xtc --sel1 "protein" --sel2 "resname CHOL" --cutoff 7.0
+   mv contacts_7.0.pkl contacts_run3_7.0.pkl
 
-# Run Gibbs sampler on combined data
-python -m basicrta.gibbs --contacts combined_contacts_7.0.pkl --nproc 5
-```
+   # Combine the contact files
+   python -m basicrta.combine --contacts contacts_run1_7.0.pkl contacts_run2_7.0.pkl contacts_run3_7.0.pkl --output combined_contacts_7.0.pkl
 
-### 2. Python API
+   # Run Gibbs sampler on combined data
+   python -m basicrta.gibbs --contacts combined_contacts_7.0.pkl --nproc 5
 
-```python
-from basicrta.contacts import CombineContacts
+Python API
+~~~~~~~~~~
 
-# Combine contact files
-combiner = CombineContacts(
-    contact_files=['contacts_run1_7.0.pkl', 'contacts_run2_7.0.pkl', 'contacts_run3_7.0.pkl'],
-    output_name='combined_contacts_7.0.pkl'
-)
+.. code-block:: python
 
-output_file = combiner.run()
-print(f"Combined contacts saved to: {output_file}")
-```
+   from basicrta.contacts import CombineContacts
 
-## Features
+   # Combine contact files
+   combiner = CombineContacts(
+       contact_files=['contacts_run1_7.0.pkl', 'contacts_run2_7.0.pkl', 'contacts_run3_7.0.pkl'],
+       output_name='combined_contacts_7.0.pkl'
+   )
 
-### Compatibility Validation
+   output_file = combiner.run()
+   print(f"Combined contacts saved to: {output_file}")
+
+Features
+--------
+
+Compatibility Validation
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The combiner automatically validates that contact files are compatible:
 
@@ -57,7 +64,8 @@ The combiner automatically validates that contact files are compatible:
 - **Same atom groups**: Protein and ligand selections must match
 - **Timestep warnings**: Warns if different timestep values are detected across runs
 
-### Metadata Preservation
+Metadata Preservation
+~~~~~~~~~~~~~~~~~~~~~
 
 Combined files preserve and extend metadata:
 
@@ -65,15 +73,19 @@ Combined files preserve and extend metadata:
 - Number of trajectories combined
 - Source file tracking for potential kinetic clustering
 
-### Trajectory Source Tracking
+Trajectory Source Tracking
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Each contact in the combined file includes trajectory source information:
+
 - Original contact data columns preserved
 - Additional column with trajectory index for kinetic clustering support
 
-## Limitations
+Limitations
+-----------
 
-### Kinetic Clustering
+Kinetic Clustering
+~~~~~~~~~~~~~~~~~~
 
 Kinetic clustering is **not yet supported** for combined contact data. The code will:
 
@@ -83,31 +95,35 @@ Kinetic clustering is **not yet supported** for combined contact data. The code 
 
 For kinetic clustering, analyze each trajectory separately or implement the extended clustering algorithm that uses trajectory source information.
 
-### Different Trajectory Properties
+Different Trajectory Properties
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - **Different timesteps**: The combiner warns about different timestep values but proceeds. This may affect residence time estimates for fast events.
 - **Different particle counts**: Unlike trajectory concatenation, this approach handles trajectories with different numbers of particles correctly.
 
-## Error Handling
+Error Handling
+--------------
 
 The combiner includes comprehensive error checking:
 
-```bash
-# Missing files
-python -m basicrta.combine --contacts file1.pkl missing_file.pkl
-# ERROR: Contact file not found: missing_file.pkl
+.. code-block:: bash
 
-# Incompatible cutoffs  
-python -m basicrta.combine --contacts contacts_7.0.pkl contacts_8.0.pkl
-# ERROR: Incompatible cutoffs: file 0 has 7.0, file 1 has 8.0
+   # Missing files
+   python -m basicrta.combine --contacts file1.pkl missing_file.pkl
+   # ERROR: Contact file not found: missing_file.pkl
 
-# Skip validation (use with caution)
-python -m basicrta.combine --contacts file1.pkl file2.pkl --no-validate
-```
+   # Incompatible cutoffs  
+   python -m basicrta.combine --contacts contacts_7.0.pkl contacts_8.0.pkl
+   # ERROR: Incompatible cutoffs: file 0 has 7.0, file 1 has 8.0
 
-## Output Format
+   # Skip validation (use with caution)
+   python -m basicrta.combine --contacts file1.pkl file2.pkl --no-validate
+
+Output Format
+-------------
 
 Combined contact files:
+
 - Maintain the same format as individual contact files
 - Include extended metadata with source tracking
 - Add trajectory source column (last column) for each contact

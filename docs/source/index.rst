@@ -20,6 +20,7 @@ This package was written to perform the analyses in [Sexton_2025]_.
 
    getting_started
    tutorial
+   combining_contacts
    api
 
 
