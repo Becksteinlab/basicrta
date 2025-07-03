@@ -50,12 +50,23 @@ def create_mock_contacts():
         
         # Create contact data (4 columns for processed contacts)
         # [protein_resid, lipid_resid, start_time, residence_time]
-        np.random.seed(42)  # For reproducible tests
+        rng = np.random.default_rng(seed=42)  # For reproducible tests
         contacts = np.zeros((n_contacts, 4), dtype=dtype)
-        contacts[:, 0] = np.random.choice([1, 2, 3, 4, 5], n_contacts)  # protein resids
-        contacts[:, 1] = np.random.choice([100, 101, 102], n_contacts)  # lipid resids  
-        contacts[:, 2] = np.random.uniform(0, 100, n_contacts)  # start times
-        contacts[:, 3] = np.random.exponential(1.0, n_contacts)  # residence times
+        contacts[:, 0] = rng.choice([1, 3, 5], n_contacts)  # protein resids
+        contacts[:, 1] = rng.choice([100, 101, 102, 201, 202], n_contacts)  # lipid resids  
+        contacts[:, 2] = rng.uniform(0, 100, n_contacts)  # start times
+        
+        # Sample from a 2-term hyperexponential distribution
+        # p(t) ~ 0.7 * exp(-10.0 * t) + 0.3 * exp(-0.5 * t)
+        # Use inverse transform sampling
+        u = rng.uniform(0, 1, n_contacts)
+        component_choice = rng.choice([0, 1], n_contacts, p=[0.7, 0.3])
+        residence_times = np.where(
+            component_choice == 0,
+            rng.exponential(1/10.0, n_contacts),  # First component: rate 10.0
+            rng.exponential(1/0.5, n_contacts)    # Second component: rate 0.5
+        )
+        contacts[:, 3] = residence_times
         
         # Save to file
         filepath = tmp_path / filename

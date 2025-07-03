@@ -20,9 +20,14 @@ The rules for this file:
 
 ### Authors
 <!-- GitHub usernames of contributors to this release -->
+* @copilot
 
 ### Added
 <!-- New added features -->
+* Support for combining contact timeseries from multiple repeat runs through new
+  `CombineContacts` class and `python -m basicrta.combine` CLI interface.
+  Enables pooled analysis of binding kinetics data with metadata preservation
+  and trajectory source tracking (Issue #16)
 
 ### Fixed
 <!-- Bug fixes -->
