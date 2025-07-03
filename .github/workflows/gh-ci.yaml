@@ -49,7 +49,9 @@ jobs:
           # os: [macOS-latest, ubuntu-latest, windows-latest]
           os: [macOS-latest, ubuntu-latest]
           python-version: ${{ fromJSON(needs.environment-config.outputs.python-matrix) }}
-          mdanalysis-version: ["latest", "develop"]
+          # mdanalysis-version: ["latest", "develop"]
+          # only test latest released MDA to reduce CI (possibly re-enable later)
+          mdanalysis-version: ["latest"]
 
     steps:
     - uses: actions/checkout@v4
