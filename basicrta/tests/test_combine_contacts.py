@@ -252,7 +252,7 @@ class TestCombineContacts:
             times=residence_times,
             residue='test_residue',
             ncomp=2,  # Use 2 components for stability
-            niter=100,  # 100 steps as requested
+            niter=1000,  # 1000 steps as requested
             burnin=5,   # 5 burnin steps as requested
             cutoff=7.0  # Set cutoff for directory creation
         )
@@ -267,10 +267,10 @@ class TestCombineContacts:
         assert gibbs.mcweights is not None
         
         # Check that we have the expected number of iterations stored
-        # (samples are saved every g steps, so 100/50 = 2 samples)
-        assert len(gibbs.mcrates) == 2  # 100 iterations / 50 g steps = 2 samples
-        assert len(gibbs.mcweights) == 2
+        # (samples are saved every g steps, so 1000/50 = 20 samples)
+        assert len(gibbs.mcrates) == 20  # 1000 iterations / 50 g steps = 20 samples
+        assert len(gibbs.mcweights) == 20
         
         # Verify shapes are correct
-        assert gibbs.mcrates.shape == (2, 2)  # 2 samples, 2 components
-        assert gibbs.mcweights.shape == (2, 2)  # 2 samples, 2 components
+        assert gibbs.mcrates.shape == (20, 2)  # 20 samples, 2 components
+        assert gibbs.mcweights.shape == (20, 2)  # 20 samples, 2 components
