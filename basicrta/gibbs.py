@@ -59,7 +59,6 @@ class ParallelGibbs(object):
             print(f"WARNING: Using combined contact file with {metadata['n_trajectories']} trajectories.")
             print("WARNING: Kinetic clustering is not yet supported for combined contacts.")
             print("WARNING: The Gibbs sampler will pool all residence times together.")
-            print("WARNING: Trajectory source information is available but not used in kinetic clustering.")
 
         protids = np.unique(contacts[:, 0])
         if not run_resids:
@@ -238,14 +237,8 @@ class Gibbs(object):
         """
         # Check if this Gibbs result was created from combined contact data
         if hasattr(self, '_from_combined_contacts') and self._from_combined_contacts:
-            raise NotImplementedError(
-                "Kinetic clustering is not yet supported for combined contact data. "
-                "The trajectory source information needed for proper kinetic clustering "
-                "is available in the combined contact files but not yet utilized in the "
-                "clustering algorithm. For now, analyze each trajectory separately for "
-                "kinetic clustering, or use the combined data only for residence time "
-                "distribution analysis."
-            )
+            print("INFO: Using combined contact data for clustering. "
+                  "Trajectory source information is pooled together.")
             
         from sklearn import mixture
         from scipy import stats

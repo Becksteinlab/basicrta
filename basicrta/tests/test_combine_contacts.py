@@ -24,21 +24,21 @@ class MockResidues:
         self.resids = np.array(resids)
 
 
-class TestCombineContacts:
-    """Test class for CombineContacts functionality."""
-    
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.temp_dir = tempfile.mkdtemp()
-        self.original_dir = os.getcwd()
-        os.chdir(self.temp_dir)
-        
-    def teardown_method(self):
-        """Clean up after tests."""
-        os.chdir(self.original_dir)
-        shutil.rmtree(self.temp_dir)
-        
-    def create_mock_contacts(self, filename, n_contacts=100, cutoff=7.0, 
+@pytest.fixture
+def temp_dir():
+    """Create a temporary directory for tests."""
+    temp_dir = tempfile.mkdtemp()
+    original_dir = os.getcwd()
+    os.chdir(temp_dir)
+    yield temp_dir
+    os.chdir(original_dir)
+    shutil.rmtree(temp_dir)
+
+
+@pytest.fixture
+def create_mock_contacts():
+    """Factory fixture for creating mock contact files."""
+    def _create_mock_contacts(filename, n_contacts=100, cutoff=7.0, 
                            ts=0.1, traj_name="test.xtc", top_name="test.pdb"):
         """Create a mock contact file for testing."""
         # Create mock atom groups that can be pickled
@@ -72,12 +72,18 @@ class TestCombineContacts:
             pickle.dump(contacts, f, protocol=5)
             
         return contacts, metadata
+    
+    return _create_mock_contacts
+
+
+class TestCombineContacts:
+    """Test class for CombineContacts functionality."""
         
-    def test_combine_contacts_basic(self):
+    def test_combine_contacts_basic(self, temp_dir, create_mock_contacts):
         """Test basic contact combination functionality."""
         # Create two mock contact files
-        contacts1, meta1 = self.create_mock_contacts("contacts1.pkl", n_contacts=50)
-        contacts2, meta2 = self.create_mock_contacts("contacts2.pkl", n_contacts=75, 
+        contacts1, meta1 = create_mock_contacts("contacts1.pkl", n_contacts=50)
+        contacts2, meta2 = create_mock_contacts("contacts2.pkl", n_contacts=75, 
                                                     traj_name="test2.xtc")
         
         # Combine them
@@ -110,10 +116,10 @@ class TestCombineContacts:
         assert np.all(traj_sources[:50] == 0)  # First 50 from file 0
         assert np.all(traj_sources[50:] == 1)  # Next 75 from file 1
         
-    def test_incompatible_cutoffs(self):
+    def test_incompatible_cutoffs(self, temp_dir, create_mock_contacts):
         """Test that incompatible cutoffs raise an error."""
-        self.create_mock_contacts("contacts1.pkl", cutoff=7.0)
-        self.create_mock_contacts("contacts2.pkl", cutoff=8.0)  # Different cutoff
+        create_mock_contacts("contacts1.pkl", cutoff=7.0)
+        create_mock_contacts("contacts2.pkl", cutoff=8.0)  # Different cutoff
         
         combiner = CombineContacts(
             contact_files=["contacts1.pkl", "contacts2.pkl"]
@@ -122,10 +128,10 @@ class TestCombineContacts:
         with pytest.raises(ValueError, match="Incompatible cutoffs"):
             combiner.run()
             
-    def test_incompatible_atom_groups(self):
+    def test_incompatible_atom_groups(self, temp_dir, create_mock_contacts):
         """Test that incompatible atom groups raise an error."""
         # Create first file with standard residues
-        contacts1, _ = self.create_mock_contacts("contacts1.pkl")
+        contacts1, _ = create_mock_contacts("contacts1.pkl")
         
         # Create second file with different protein residues
         mock_ag1 = MockAtomGroup([10, 20, 30])  # Different resids
@@ -153,10 +159,10 @@ class TestCombineContacts:
         with pytest.raises(ValueError, match="Incompatible ag1 residues"):
             combiner.run()
             
-    def test_different_timesteps_warning(self, capsys):
+    def test_different_timesteps_warning(self, temp_dir, create_mock_contacts, capsys):
         """Test that different timesteps produce a warning."""
-        self.create_mock_contacts("contacts1.pkl", ts=0.1)
-        self.create_mock_contacts("contacts2.pkl", ts=0.2)  # Different timestep
+        create_mock_contacts("contacts1.pkl", ts=0.1)
+        create_mock_contacts("contacts2.pkl", ts=0.2)  # Different timestep
         
         combiner = CombineContacts(
             contact_files=["contacts1.pkl", "contacts2.pkl"]
@@ -168,16 +174,16 @@ class TestCombineContacts:
         captured = capsys.readouterr()
         assert "WARNING: Different timesteps detected" in captured.out
         
-    def test_minimum_files_required(self):
+    def test_minimum_files_required(self, temp_dir, create_mock_contacts):
         """Test that at least 2 files are required."""
-        self.create_mock_contacts("contacts1.pkl")
+        create_mock_contacts("contacts1.pkl")
         
         with pytest.raises(ValueError, match="At least 2 contact files are required"):
             CombineContacts(contact_files=["contacts1.pkl"])
             
-    def test_missing_file(self):
+    def test_missing_file(self, temp_dir, create_mock_contacts):
         """Test handling of missing contact files."""
-        self.create_mock_contacts("contacts1.pkl")
+        create_mock_contacts("contacts1.pkl")
         
         combiner = CombineContacts(
             contact_files=["contacts1.pkl", "nonexistent.pkl"]
@@ -186,10 +192,10 @@ class TestCombineContacts:
         with pytest.raises(FileNotFoundError, match="Contact file not found"):
             combiner.run()
             
-    def test_skip_validation(self):
+    def test_skip_validation(self, temp_dir, create_mock_contacts):
         """Test skipping compatibility validation."""
-        self.create_mock_contacts("contacts1.pkl", cutoff=7.0)
-        self.create_mock_contacts("contacts2.pkl", cutoff=8.0)  # Different cutoff
+        create_mock_contacts("contacts1.pkl", cutoff=7.0)
+        create_mock_contacts("contacts2.pkl", cutoff=8.0)  # Different cutoff
         
         combiner = CombineContacts(
             contact_files=["contacts1.pkl", "contacts2.pkl"],
@@ -200,11 +206,11 @@ class TestCombineContacts:
         output_file = combiner.run()
         assert os.path.exists(output_file)
         
-    def test_combined_contacts_detection(self):
+    def test_combined_contacts_detection(self, temp_dir, create_mock_contacts):
         """Test that combined contact files are properly detected."""
         # Create and combine contacts
-        self.create_mock_contacts("contacts1.pkl", n_contacts=30)
-        self.create_mock_contacts("contacts2.pkl", n_contacts=40, traj_name="test2.xtc")
+        create_mock_contacts("contacts1.pkl", n_contacts=30)
+        create_mock_contacts("contacts2.pkl", n_contacts=40, traj_name="test2.xtc")
         
         combiner = CombineContacts(
             contact_files=["contacts1.pkl", "contacts2.pkl"],
