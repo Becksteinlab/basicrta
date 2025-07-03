@@ -35,3 +35,36 @@ The rules for this file:
 
 ### Removed
 <!-- Removed features -->
+
+
+## v1.0.0 (2025-05-24)
+
+### Authors
+* @rsexton2
+* @ianmkenney
+* @rjoshi44
+* @orbeckst
+
+### Added
+* added option processing for label-cutoff to cluster.py (PR #13)
+
+### Fixed
+* Fix package detection and installation (PR #12)
+* fix citation in reST docs (PR #7)
+* update codcov action in workflow (PR #9)
+
+### Removed
+* no testing on Windows, temporarily exclude windows-latest from CI (PR #11)
+
+## v0.2.0 (2024-11-14)
+
+### Authors
+* @rsexton2
+
+### Summary
+Feature-complete release.
+
+### Added
+* Workflow executable through command-line
+* updated docs/tutorial
+
