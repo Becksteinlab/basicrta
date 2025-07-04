@@ -7,7 +7,6 @@ import numpy as np
 import tempfile
 import os
 from basicrta.gibbs import Gibbs
-from basicrta.tests.datafiles import times
 
 
 class TestGibbsSampler:

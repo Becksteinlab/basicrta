@@ -21,6 +21,7 @@ The rules for this file:
 ### Authors
 <!-- GitHub usernames of contributors to this release -->
 * @copilot
+* @orbeckst
 
 ### Added
 <!-- New added features -->

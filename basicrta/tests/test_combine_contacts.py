@@ -57,8 +57,8 @@ def create_mock_contacts():
         contacts[:, 2] = rng.uniform(0, 100, n_contacts)  # start times
         
         # Sample from a 2-term hyperexponential distribution
-        # p(t) ~ 0.7 * exp(-10.0 * t) + 0.3 * exp(-0.5 * t)
-        # Use inverse transform sampling
+        # for the waiting times t:
+        # t ~ 0.7 * exp(-10.0 * t) + 0.3 * exp(-0.5 * t)
         u = rng.uniform(0, 1, n_contacts)
         component_choice = rng.choice([0, 1], n_contacts, p=[0.7, 0.3])
         residence_times = np.where(
