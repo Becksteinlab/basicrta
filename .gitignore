@@ -3,3 +3,6 @@
 basicrta.egg-info/
 dist/
 
+# Test artifacts
+basicrta-*/
+*.pkl

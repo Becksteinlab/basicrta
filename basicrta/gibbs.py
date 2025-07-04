@@ -52,6 +52,14 @@ class ParallelGibbs(object):
         with open(self.contacts, 'r+b') as f:
             contacts = pickle.load(f)
 
+        # Check if this is a combined contact file
+        metadata = contacts.dtype.metadata
+        is_combined = metadata and 'n_trajectories' in metadata and metadata['n_trajectories'] > 1
+        if is_combined:
+            print(f"WARNING: Using combined contact file with {metadata['n_trajectories']} trajectories.")
+            print("WARNING: Kinetic clustering is not yet supported for combined contacts.")
+            print("WARNING: The Gibbs sampler will pool all residence times together.")
+
         protids = np.unique(contacts[:, 0])
         if not run_resids:
             run_resids = protids
@@ -71,7 +79,7 @@ class ParallelGibbs(object):
                          run_resids])
         residues = residues[inds]
         input_list = [[residues[i], times[i].copy(), i % self.nproc,
-                       self.ncomp, self.niter, self.cutoff, g] for i in
+                       self.ncomp, self.niter, self.cutoff, g, is_combined] for i in
                       range(len(residues))]
 
         del contacts, times
@@ -227,6 +235,11 @@ class Gibbs(object):
         :param method: Mixture method to use
         :type method: str
         """
+        # Check if this Gibbs result was created from combined contact data
+        if hasattr(self, '_from_combined_contacts') and self._from_combined_contacts:
+            print("INFO: Using combined contact data for clustering. "
+                  "Trajectory source information is pooled together.")
+            
         from sklearn import mixture
         from scipy import stats
 
