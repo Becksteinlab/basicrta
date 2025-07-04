@@ -26,3 +26,4 @@ The rules for this file:
 
 **2025**
 - Rekha Joshi <@rjoshi44>
+- copilot-swe-agent[bot] <@copilot>

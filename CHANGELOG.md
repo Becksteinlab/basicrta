@@ -16,34 +16,25 @@ The rules for this file:
   * accompany each entry with github issue/PR number (Issue #xyz)
 -->
 
-## [Unreleased]
+## [1.1.0] - 2025-07-04
 
 ### Authors
-<!-- GitHub usernames of contributors to this release -->
+* @rsexton2
 * @copilot
 * @orbeckst
 
 ### Added
-<!-- New added features -->
-* Support for combining contact timeseries from multiple repeat runs through new
-  `CombineContacts` class and `python -m basicrta.combine` CLI interface.
+* Support for combining contact timeseries from multiple repeat runs through
+  new `CombineContacts` class and `python -m basicrta.combine` CLI interface.
   Enables pooled analysis of binding kinetics data with metadata preservation
   and trajectory source tracking (Issue #16)
 
-### Fixed
-<!-- Bug fixes -->
-
 ### Changed
-<!-- Changes in existing functionality -->
-
-### Deprecated
-<!-- Soon-to-be removed features -->
-
-### Removed
-<!-- Removed features -->
+* package has final paper citation
 
 
-## v1.0.0 (2025-05-24)
+
+## [1.0.0] - 2025-05-24
 
 ### Authors
 * @rsexton2
@@ -62,7 +53,7 @@ The rules for this file:
 ### Removed
 * no testing on Windows, temporarily exclude windows-latest from CI (PR #11)
 
-## v0.2.0 (2024-11-14)
+## [0.2.0] - 2024-11-14
 
 ### Authors
 * @rsexton2
