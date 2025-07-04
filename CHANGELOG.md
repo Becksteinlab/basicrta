@@ -16,7 +16,7 @@ The rules for this file:
   * accompany each entry with github issue/PR number (Issue #xyz)
 -->
 
-## [Unreleased]
+## [Unreleased] - YYYY-MM-DD
 
 ### Authors
 <!-- GitHub usernames of contributors to this release -->
@@ -43,7 +43,7 @@ The rules for this file:
 <!-- Removed features -->
 
 
-## v1.0.0 (2025-05-24)
+## [1.0.0] - 2025-05-24
 
 ### Authors
 * @rsexton2
@@ -62,7 +62,7 @@ The rules for this file:
 ### Removed
 * no testing on Windows, temporarily exclude windows-latest from CI (PR #11)
 
-## v0.2.0 (2024-11-14)
+## [0.2.0] - 2024-11-14
 
 ### Authors
 * @rsexton2
