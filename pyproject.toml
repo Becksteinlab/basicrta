@@ -8,7 +8,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "basicrta"
 description = "A package to extract binding kinetics from molecular dynamics simulations"
-license = {file = "LICENSE" }
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [
     {name = "Ricky Sexton", email = "risexto878@gmail.com"},
 ]
