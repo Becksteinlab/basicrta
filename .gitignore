@@ -6,3 +6,9 @@ dist/
 # Test artifacts
 basicrta-*/
 *.pkl
+
+# editor files
+*~
+
+# macOS garbage
+.DS_Store
