@@ -30,6 +30,7 @@ The rules for this file:
   and trajectory source tracking (Issue #16)
 
 ### Changed
+* distinguished max_cutoff from cutoff in contact file metadata 
 * package has final paper citation
 
 
