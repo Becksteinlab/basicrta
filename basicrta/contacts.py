@@ -81,7 +81,7 @@ class MapContacts(object):
                                    'traj': self.u.trajectory.filename,
                                    'ag1': self.ag1, 'ag2': self.ag2,
                                    'ts': self.u.trajectory.dt/1000,
-                                   'cutoff': self.max_cutoff})
+                                   'cutoff': self.cutoff})
 
         contact_map = np.memmap('.tmpmap', mode='w+',
                                 shape=(mapsize, 5), dtype=dtype)
