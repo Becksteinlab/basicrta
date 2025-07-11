@@ -9,9 +9,3 @@ than a few megabytes in size it is recommended to host these files elsewhere. Th
 as the `git` structure is unable to correctly take updates to these files and will store a complete copy of every version
 in your `git` history which can quickly add up. As a note most `git` hosting services like GitHub have a 1 GB per repository
 cap.
-
-## Including package data
-
-Modify your package's `setup.py` file and the `setup()` command. Include the 
-[`package_data`](http://setuptools.readthedocs.io/en/latest/setuptools.html#basic-use) keyword and point it at the 
-correct files.
