@@ -48,8 +48,8 @@ class MapContacts(object):
     :type nslices: int, optional
     """
 
-    def __init__(self, u, ag1, ag2, nproc=1, frames=None, max_cutoff=10.0,
-                 nslices=100):
+    def __init__(self, u, ag1, ag2, cutoff, nproc=1, frames=None, 
+                 max_cutoff=10.0, nslices=100):
         self.u, self.nproc = u, nproc
         self.ag1, self.ag2 = ag1, ag2
         self.cutoff, self.frames, self.nslices = max_cutoff, frames, nslices
@@ -382,6 +382,6 @@ if __name__ == '__main__':
     ag2 = u.select_atoms(args.sel2)
 
     if not os.path.exists('contacts.pkl'):
-        MapContacts(u, ag1, ag2, nproc=nproc, nslices=nslices).run()
+        MapContacts(u, ag1, ag2, cutoff, nproc=nproc, nslices=nslices).run()
 
     ProcessContacts(cutoff, nproc).run()
