@@ -52,7 +52,8 @@ class MapContacts(object):
                  max_cutoff=10.0, nslices=100):
         self.u, self.nproc = u, nproc
         self.ag1, self.ag2 = ag1, ag2
-        self.cutoff, self.frames, self.nslices = max_cutoff, frames, nslices
+        self.max_cutoff, self.cutoff = max_cutoff, cutoff
+        self.frames, self.nslices = frames, nslices
 
     def run(self):
         """Run contact analysis and save to `contacts.pkl`
@@ -114,7 +115,7 @@ class MapContacts(object):
                 dset = []
                 b = distances.capped_distance(self.ag1.positions,
                                               self.ag2.positions,
-                                              max_cutoff=self.cutoff)
+                                              max_cutoff=self.max_cutoff)
                 pairlist = [(self.ag1.resids[b[0][i, 0]],
                              self.ag2.resids[b[0][i, 1]]) for i in
                             range(len(b[0]))]
