@@ -3,6 +3,8 @@ import pytest
 import pickle
 import MDAnalysis as mda
 import numpy as np
+import os
+import sys
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_mapcontacts():
@@ -16,7 +18,7 @@ def test_mapcontacts():
     MapContacts(u, P88, chol, nslices=1).run()
 
 def test_contacts():
-    with open('contacts.pkl', 'rb') as c:
+    with open('basicrta/tests/contacts.pkl', 'rb') as c:
         contacts = pickle.load(c)
     
     filtered_contacts = contacts[contacts[:,3] <= 7]
@@ -34,14 +36,14 @@ def test_max_cutoff():
 
     MapContacts(u, P88, chol, nslices=1, max_cutoff=12.0).run()
     
-    with open('contacts.pkl', 'rb') as c:
+    with open('basicrta/tests/contacts.pkl', 'rb') as c:
         contacts = pickle.load(c)
     
     assert len(contacts) == 30
     assert (contacts[:, 0] == np.delete(np.arange(69,101), [4,5])).all()
 
 def test_contact_metadata():
-    with open('contacts.pkl', 'rb') as c:
+    with open('basicrta/tests/contacts.pkl', 'rb') as c:
         contacts = pickle.load(c)
 
     assert list(contacts.dtype.metadata) == ['top', 'traj', 'ag1', 'ag2', 'ts',
@@ -52,13 +54,13 @@ def test_processcontacts():
     ProcessContacts(7.0).run()
 
 def test_processed_contacts():
-    with open('contacts_7.0.pkl', 'rb') as f:
+    with open('basicrta/tests/contacts_7.0.pkl', 'rb') as f:
        contacts = pickle.load(f)
 
     assert (contacts == [88, 309, 9.6, 0.5]).all()
 
 def test_processed_contact_metadata():
-    with open('contacts_7.0.pkl', 'rb') as c:
+    with open('basicrta/tests/contacts_7.0.pkl', 'rb') as c:
         contacts = pickle.load(c)
 
     assert list(contacts.dtype.metadata) == ['top', 'traj', 'ag1', 'ag2', 'ts',
@@ -68,6 +70,4 @@ def test_tearDown():
     os.remove('contacts.pkl')
     os.remove('contacts_7.0.pkl')
     os.remove('.tmpmap')
-    os.remove('.contacts*.npy')
-    os.remove('.prot_chol.xtc_offsets.*')
 
