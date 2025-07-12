@@ -28,6 +28,8 @@ import basicrta.tests.data
 _data_ref = resources.files('basicrta.tests.data')
 
 times = np.load((_data_ref / 'times.npy').as_posix())
+PDB = (_data_ref / 'prot_chol.pdb').as_posix()
+XTC = (_data_ref / 'prot_chol.xtc').as_posix()
 # This should be the last line: clean up namespace
 del resources
 

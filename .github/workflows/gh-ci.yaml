@@ -103,7 +103,6 @@ jobs:
         conda info
         conda list
 
-
     - name: Run tests
       run: |
         pytest -n auto -v --cov=basicrta --cov-report=xml --color=yes basicrta/tests/

@@ -36,23 +36,24 @@ class MapContacts(object):
     :param frames: List of frames to use in computing contacts (default is
                    None, meaning all frames are used).
     :type frames: list or np.array, optional
-    :param cutoff: Maximum cutoff to use in computing contacts. A primary 
+    :param max_cutoff: Maximum cutoff to use in computing contacts. A primary 
                    contact map is created upon which multiple cutoffs can be
                    imposed, i.e. in the case where a proper cutoff is being
                    determined. This can typically be left at its default value,
                    unless a greater value is needed (default is 10.0).
-    :type cutoff: float, optional
+    :type max_cutoff: float, optional
     :param nslices: Number of slices to break the trajectory into for
                     processing. If device memory is limited, try increasing
                     `nslices` (default is 100).
     :type nslices: int, optional
     """
 
-    def __init__(self, u, ag1, ag2, nproc=1, frames=None, max_cutoff=10.0,
-                 nslices=100):
+    def __init__(self, u, ag1, ag2, nproc=1, frames=None, 
+                 max_cutoff=10.0, nslices=100):
         self.u, self.nproc = u, nproc
         self.ag1, self.ag2 = ag1, ag2
-        self.cutoff, self.frames, self.nslices = max_cutoff, frames, nslices
+        self.max_cutoff = max_cutoff
+        self.frames, self.nslices = frames, nslices
 
     def run(self):
         """Run contact analysis and save to `contacts.pkl`
@@ -81,7 +82,7 @@ class MapContacts(object):
                                    'traj': self.u.trajectory.filename,
                                    'ag1': self.ag1, 'ag2': self.ag2,
                                    'ts': self.u.trajectory.dt/1000,
-                                   'cutoff': self.max_cutoff})
+                                   'max_cutoff': self.max_cutoff})
 
         contact_map = np.memmap('.tmpmap', mode='w+',
                                 shape=(mapsize, 5), dtype=dtype)
@@ -114,7 +115,7 @@ class MapContacts(object):
                 dset = []
                 b = distances.capped_distance(self.ag1.positions,
                                               self.ag2.positions,
-                                              max_cutoff=self.cutoff)
+                                              max_cutoff=self.max_cutoff)
                 pairlist = [(self.ag1.resids[b[0][i, 0]],
                              self.ag2.resids[b[0][i, 1]]) for i in
                             range(len(b[0]))]
@@ -160,6 +161,9 @@ class ProcessContacts(object):
                 memmap = pickle.load(f)
             # memmap = np.load(self.map_name, mmap_mode='r')
             dtype = memmap.dtype
+            new_metadata = dtype.metadata.copy()
+            new_metadata['cutoff'] = self.cutoff
+            new_dtype = np.dtype(np.float64, metadata=new_metadata)
 
             memmap = memmap[memmap[:, -2] <= self.cutoff]
         else:
@@ -182,7 +186,7 @@ class ProcessContacts(object):
         bounds = np.concatenate([[0], np.cumsum(lens)]).astype(int)
         mapsize = sum(lens)
         contact_map = np.memmap('.tmpmap', mode='w+',
-                                shape=(mapsize, 4), dtype=dtype)
+                                shape=(mapsize, 4), dtype=new_dtype)
 
         for i in range(len(lresids)):
             contact_map[bounds[i]:bounds[i+1]] = np.load(f'.contacts_{i:04}.'
