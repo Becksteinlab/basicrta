@@ -112,7 +112,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: contacts
-        path: contacts.pkl
+        path: dist/contacts.pkl
         retention-days: 1
 
     - name: codecov
