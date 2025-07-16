@@ -56,7 +56,7 @@ class MapContacts(object):
         self.frames, self.nslices = frames, nslices
 
     def run(self):
-        """Run contact analysis and save to `contacts.pkl`
+        """Run contact analysis and save to `contacts_max{max_cutoff}.pkl`
         """
         if self.frames is not None:
             sliced_frames = np.array_split(self.frames, self.nslices)
@@ -92,11 +92,11 @@ class MapContacts(object):
                                                                delimiter=',')
             contact_map.flush()
 
-        contact_map.dump('contacts.pkl', protocol=5)
+        contact_map.dump(f'contacts_max{self.max_cutoff}.pkl', protocol=5)
         os.remove('.tmpmap')
         cfiles = glob.glob('.contacts*')
         [os.remove(f) for f in cfiles]
-        print('\nSaved contacts as "contacts.pkl"')
+        print('\nSaved contacts as "contacts_max{self.max_cutoff}.pkl')
 
     def _run_contacts(self, i, sliced_traj):
         from basicrta.util import get_dec
@@ -147,7 +147,7 @@ class ProcessContacts(object):
     :param map_name: Name of primary contact map (default is `contacts.pkl`)
     :type map_name: str, optional
     """
-    def __init__(self, cutoff, nproc=1, map_name='contacts.pkl'):
+    def __init__(self, cutoff, nproc=1, map_name='contacts_max10.pkl'):
         self.nproc = nproc
         self.map_name = map_name
         self.cutoff = cutoff
