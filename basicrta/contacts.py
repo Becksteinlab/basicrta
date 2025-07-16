@@ -96,7 +96,7 @@ class MapContacts(object):
         os.remove('.tmpmap')
         cfiles = glob.glob('.contacts*')
         [os.remove(f) for f in cfiles]
-        print('\nSaved contacts as "contacts_max{self.max_cutoff}.pkl')
+        print(f'\nSaved contacts as "contacts_max{self.max_cutoff}.pkl')
 
     def _run_contacts(self, i, sliced_traj):
         from basicrta.util import get_dec
