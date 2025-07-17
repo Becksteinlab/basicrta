@@ -105,7 +105,7 @@ jobs:
 
     - name: Run tests
       run: |
-        pytest -n auto -v --cov=basicrta --cov-report=xml --color=yes basicrta/tests/
+        pytest -n auto -v --cov=basicrta --cov-report=xml --color=yes basicrta/tests/ --basetemp=testtemp
 
     - name: codecov
       if: github.repository == 'becksteinlab/basicrta' && github.event_name != 'schedule'

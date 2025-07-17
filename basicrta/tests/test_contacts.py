@@ -50,7 +50,8 @@ def setup_processcontacts(setup_mapcontacts, tmp_path_factory):
 def test_mapcontacts(setup_mapcontacts):
     with open(setup_mapcontacts, 'rb') as c:
         contacts = pickle.load(c)
-    
+
+    print(contacts)
     filtered_contacts = contacts[contacts[:,3] <= 7]
     assert len(filtered_contacts) == 5
     assert (filtered_contacts[:,0] == [96,97,98,99,100]).all() 
