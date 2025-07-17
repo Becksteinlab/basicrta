@@ -78,7 +78,8 @@ def test_contact_metadata(setup_mapcontacts):
                                              'max_cutoff']
 
 def test_processcontacts(setup_processcontacts):
-    pass
+    with open(setup_processcontacts, 'rb') as f:
+       contacts = pickle.load(f)
 
 def test_processed_contacts(setup_processcontacts):
     with open(setup_processcontacts, 'rb') as f:
