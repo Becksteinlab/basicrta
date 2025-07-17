@@ -147,7 +147,7 @@ class ProcessContacts(object):
     :param map_name: Name of primary contact map (default is `contacts.pkl`)
     :type map_name: str, optional
     """
-    def __init__(self, cutoff, nproc=1, map_name='contacts_max10.pkl'):
+    def __init__(self, cutoff, nproc=1, map_name='contacts_max10.0.pkl'):
         self.nproc = nproc
         self.map_name = map_name
         self.cutoff = cutoff
