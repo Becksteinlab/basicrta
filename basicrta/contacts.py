@@ -36,26 +36,27 @@ class MapContacts(object):
     :param frames: List of frames to use in computing contacts (default is
                    None, meaning all frames are used).
     :type frames: list or np.array, optional
-    :param cutoff: Maximum cutoff to use in computing contacts. A primary 
+    :param max_cutoff: Maximum cutoff to use in computing contacts. A primary 
                    contact map is created upon which multiple cutoffs can be
                    imposed, i.e. in the case where a proper cutoff is being
                    determined. This can typically be left at its default value,
                    unless a greater value is needed (default is 10.0).
-    :type cutoff: float, optional
+    :type max_cutoff: float, optional
     :param nslices: Number of slices to break the trajectory into for
                     processing. If device memory is limited, try increasing
                     `nslices` (default is 100).
     :type nslices: int, optional
     """
 
-    def __init__(self, u, ag1, ag2, nproc=1, frames=None, max_cutoff=10.0,
-                 nslices=100):
+    def __init__(self, u, ag1, ag2, nproc=1, frames=None, 
+                 max_cutoff=10.0, nslices=100):
         self.u, self.nproc = u, nproc
         self.ag1, self.ag2 = ag1, ag2
-        self.cutoff, self.frames, self.nslices = max_cutoff, frames, nslices
+        self.max_cutoff = max_cutoff
+        self.frames, self.nslices = frames, nslices
 
     def run(self):
-        """Run contact analysis and save to `contacts.pkl`
+        """Run contact analysis and save to `contacts_max{max_cutoff}.pkl`
         """
         if self.frames is not None:
             sliced_frames = np.array_split(self.frames, self.nslices)
@@ -81,7 +82,7 @@ class MapContacts(object):
                                    'traj': self.u.trajectory.filename,
                                    'ag1': self.ag1, 'ag2': self.ag2,
                                    'ts': self.u.trajectory.dt/1000,
-                                   'cutoff': self.max_cutoff})
+                                   'max_cutoff': self.max_cutoff})
 
         contact_map = np.memmap('.tmpmap', mode='w+',
                                 shape=(mapsize, 5), dtype=dtype)
@@ -91,11 +92,11 @@ class MapContacts(object):
                                                                delimiter=',')
             contact_map.flush()
 
-        contact_map.dump('contacts.pkl', protocol=5)
+        contact_map.dump(f'contacts_max{self.max_cutoff}.pkl', protocol=5)
         os.remove('.tmpmap')
         cfiles = glob.glob('.contacts*')
         [os.remove(f) for f in cfiles]
-        print('\nSaved contacts as "contacts.pkl"')
+        print(f'\nSaved contacts as "contacts_max{self.max_cutoff}.pkl')
 
     def _run_contacts(self, i, sliced_traj):
         from basicrta.util import get_dec
@@ -114,7 +115,7 @@ class MapContacts(object):
                 dset = []
                 b = distances.capped_distance(self.ag1.positions,
                                               self.ag2.positions,
-                                              max_cutoff=self.cutoff)
+                                              max_cutoff=self.max_cutoff)
                 pairlist = [(self.ag1.resids[b[0][i, 0]],
                              self.ag2.resids[b[0][i, 1]]) for i in
                             range(len(b[0]))]
@@ -122,9 +123,9 @@ class MapContacts(object):
                 lsum = 0
                 for j in pairdir:
                     temp = pairdir[j]
-                    dset.append([ts.frame, j[0], j[1],
-                                 min(b[1][lsum:lsum+temp]),
-                                 np.round(ts.time, dec)/1000])  # convert to ns
+                    dset.append([int(ts.frame), int(j[0]), int(j[1]),
+                                 float(min(b[1][lsum:lsum+temp])),
+                                 float(np.round(ts.time, dec)/1000)])  # convert to ns
                     lsum += temp
                 [f.write(f"{line}".strip('[]') + "\n") for line in dset]
                 data_len += len(dset)
@@ -134,19 +135,21 @@ class MapContacts(object):
 
 class ProcessContacts(object):
     """The :class:`ProcessProtein` class takes the primary contact map
-    (default is `contacts.pkl`) and collects contacts based on a prescribed 
+    (i.e. `contacts_max10.0.pkl`) and collects contacts based on a prescribed 
     cutoff. 
 
     :param cutoff: Collect all contacts between `ag1` and `ag2` within this
                    value.
     :type cutoff: float
+    :param map_name: Name of primary contact map. The default produced by
+                     MapContacts is `contacts_max10.0.pkl`.
+    :type map_name: str
     :param nproc: Number of processes to use in collecting contacts (default is
                   1). 
     :type nproc: int, optional
-    :param map_name: Name of primary contact map (default is `contacts.pkl`)
-    :type map_name: str, optional
     """
-    def __init__(self, cutoff, nproc=1, map_name='contacts.pkl'):
+
+    def __init__(self, cutoff, map_name, nproc=1):
         self.nproc = nproc
         self.map_name = map_name
         self.cutoff = cutoff
@@ -160,6 +163,9 @@ class ProcessContacts(object):
                 memmap = pickle.load(f)
             # memmap = np.load(self.map_name, mmap_mode='r')
             dtype = memmap.dtype
+            new_metadata = dtype.metadata.copy()
+            new_metadata['cutoff'] = self.cutoff
+            new_dtype = np.dtype(np.float64, metadata=new_metadata)
 
             memmap = memmap[memmap[:, -2] <= self.cutoff]
         else:
@@ -182,7 +188,7 @@ class ProcessContacts(object):
         bounds = np.concatenate([[0], np.cumsum(lens)]).astype(int)
         mapsize = sum(lens)
         contact_map = np.memmap('.tmpmap', mode='w+',
-                                shape=(mapsize, 4), dtype=dtype)
+                                shape=(mapsize, 4), dtype=new_dtype)
 
         for i in range(len(lresids)):
             contact_map[bounds[i]:bounds[i+1]] = np.load(f'.contacts_{i:04}.'
@@ -384,4 +390,4 @@ if __name__ == '__main__':
     if not os.path.exists('contacts.pkl'):
         MapContacts(u, ag1, ag2, nproc=nproc, nslices=nslices).run()
 
-    ProcessContacts(cutoff, nproc).run()
+    ProcessContacts(cutoff, nproc, map_name='contacts_max10.0.pkl').run()
