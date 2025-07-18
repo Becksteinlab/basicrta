@@ -135,19 +135,20 @@ class MapContacts(object):
 
 class ProcessContacts(object):
     """The :class:`ProcessProtein` class takes the primary contact map
-    (default is `contacts.pkl`) and collects contacts based on a prescribed 
+    (i.e. `contacts_max10.0.pkl`) and collects contacts based on a prescribed 
     cutoff. 
 
     :param cutoff: Collect all contacts between `ag1` and `ag2` within this
                    value.
     :type cutoff: float
     :param map_name: Name of primary contact map. The default produced by
-    MapContacts is `contacts_max10.0.pkl`)
+                     MapContacts is `contacts_max10.0.pkl`.
     :type map_name: str
     :param nproc: Number of processes to use in collecting contacts (default is
                   1). 
     :type nproc: int, optional
     """
+
     def __init__(self, cutoff, map_name, nproc=1):
         self.nproc = nproc
         self.map_name = map_name
