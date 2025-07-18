@@ -38,7 +38,7 @@ def setup_processcontacts(setup_mapcontacts, tmp_path_factory):
     os.chdir(datadir)
 
     try:
-        ProcessContacts(7.0).run()
+        ProcessContacts(7.0, map_name='contacts_max10.0.pkl').run()
     finally:
         os.chdir(prev_cwd)
                                                                                              

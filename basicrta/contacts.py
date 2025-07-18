@@ -389,4 +389,4 @@ if __name__ == '__main__':
     if not os.path.exists('contacts.pkl'):
         MapContacts(u, ag1, ag2, nproc=nproc, nslices=nslices).run()
 
-    ProcessContacts(cutoff, nproc).run()
+    ProcessContacts(cutoff, nproc, map_name='contacts_max10.0.pkl').run()
