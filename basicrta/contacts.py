@@ -123,9 +123,9 @@ class MapContacts(object):
                 lsum = 0
                 for j in pairdir:
                     temp = pairdir[j]
-                    dset.append([ts.frame, j[0], j[1],
-                                 min(b[1][lsum:lsum+temp]),
-                                 np.round(ts.time, dec)/1000])  # convert to ns
+                    dset.append([int(ts.frame), int(j[0]), int(j[1]),
+                                 float(min(b[1][lsum:lsum+temp])),
+                                 float(np.round(ts.time, dec)/1000)])  # convert to ns
                     lsum += temp
                 [f.write(f"{line}".strip('[]') + "\n") for line in dset]
                 data_len += len(dset)
