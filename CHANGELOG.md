@@ -15,6 +15,20 @@ The rules for this file:
     * YYYY-MM-DD date format (following ISO 8601)
   * accompany each entry with github issue/PR number (Issue #xyz)
 -->
+## [1.1.1] - 2025-07-18
+
+### Authors
+* @rsexton2
+* @orbeckst
+
+## Changed
+* The default name for the contacts file changed from "contacts.pkl" to
+  "contacts_max10.0.pkl" as it now embeds the max_cutoff (Issue #27, PR #31)
+
+## Fixed
+* distinguished max_cutoff from cutoff in contact file metadata (Issues #27
+  and #32) 
+
 
 ## [1.1.0] - 2025-07-04
 
@@ -30,7 +44,6 @@ The rules for this file:
   and trajectory source tracking (Issue #16)
 
 ### Changed
-* distinguished max_cutoff from cutoff in contact file metadata (Issues #27 #32) 
 * package has final paper citation
 
 
