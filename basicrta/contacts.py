@@ -141,13 +141,14 @@ class ProcessContacts(object):
     :param cutoff: Collect all contacts between `ag1` and `ag2` within this
                    value.
     :type cutoff: float
+    :param map_name: Name of primary contact map. The default produced by
+    MapContacts is `contacts_max10.0.pkl`)
+    :type map_name: str
     :param nproc: Number of processes to use in collecting contacts (default is
                   1). 
     :type nproc: int, optional
-    :param map_name: Name of primary contact map (default is `contacts.pkl`)
-    :type map_name: str, optional
     """
-    def __init__(self, cutoff, nproc=1, map_name='contacts_max10.0.pkl'):
+    def __init__(self, cutoff, map_name, nproc=1):
         self.nproc = nproc
         self.map_name = map_name
         self.cutoff = cutoff
