@@ -15,6 +15,15 @@ The rules for this file:
     * YYYY-MM-DD date format (following ISO 8601)
   * accompany each entry with github issue/PR number (Issue #xyz)
 -->
+## [1.1.2] - 2025-07-??
+
+### Authors
+* @rjoshi44
+
+## Fixed
+* fixed contact script (issue #34)
+
+ 
 ## [1.1.1] - 2025-07-18
 
 ### Authors
