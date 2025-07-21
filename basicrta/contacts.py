@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from tqdm import tqdm
 from MDAnalysis.lib import distances
 from multiprocessing import Pool, Lock
