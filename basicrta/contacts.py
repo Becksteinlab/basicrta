@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from tqdm import tqdm
 from MDAnalysis.lib import distances
 from multiprocessing import Pool, Lock
@@ -54,6 +52,7 @@ class MapContacts(object):
         self.ag1, self.ag2 = ag1, ag2
         self.max_cutoff = max_cutoff
         self.frames, self.nslices = frames, nslices
+        self.contacts_filename = f"contacts_max{self.max_cutoff}.pkl"
 
     def run(self):
         """Run contact analysis and save to `contacts_max{max_cutoff}.pkl`
@@ -92,11 +91,11 @@ class MapContacts(object):
                                                                delimiter=',')
             contact_map.flush()
 
-        contact_map.dump(f'contacts_max{self.max_cutoff}.pkl', protocol=5)
+        contact_map.dump(self.contacts_filename, protocol=5)
         os.remove('.tmpmap')
         cfiles = glob.glob('.contacts*')
         [os.remove(f) for f in cfiles]
-        print(f'\nSaved contacts as "contacts_max{self.max_cutoff}.pkl')
+        print(f'\nSaved contacts as "{self.contacts_filename}"')
 
     def _run_contacts(self, i, sliced_traj):
         from basicrta.util import get_dec
@@ -386,8 +385,14 @@ if __name__ == '__main__':
     cutoff, nproc, nslices = args.cutoff, args.nproc, args.nslices
     ag1 = u.select_atoms(args.sel1)
     ag2 = u.select_atoms(args.sel2)
+    
+    mc = MapContacts(u, ag1, ag2, nproc=nproc, nslices=nslices)
+    mapname = mc.contacts_filename
+    if not os.path.exists(mapname):
+        print(f"running MapContacts to generate {mapname}")
+        mc.run()
+    else:
+        print(f"using existing {mapname}")
 
-    if not os.path.exists('contacts.pkl'):
-        MapContacts(u, ag1, ag2, nproc=nproc, nslices=nslices).run()
+    ProcessContacts(cutoff, mapname, nproc=nproc).run()
 
-    ProcessContacts(cutoff, nproc, map_name='contacts_max10.0.pkl').run()
