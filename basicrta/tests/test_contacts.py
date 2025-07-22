@@ -5,9 +5,9 @@ import os
 import sys
 import MDAnalysis as mda
 import numpy as np
-import contextlib
 from pathlib import Path
 from basicrta.tests.datafiles import PDB, XTC
+from basicrta.tests.utils import work_in
 from basicrta.contacts import MapContacts
 
 @pytest.fixture(scope="module")
@@ -18,13 +18,9 @@ def setup_mapcontacts(tmp_path_factory):
     
     tmp_path_factory.mktemp("data")
     datadir = tmp_path_factory.mktemp("data")
-    prev_cwd = Path.cwd()
-    os.chdir(datadir)
 
-    try:
+    with work_in(datadir):
         MapContacts(u, P88, chol, nslices=1).run()
-    finally:
-        os.chdir(prev_cwd)
                                                                                              
     fn = datadir / "contacts_max10.0.pkl"
     assert fn.exists(), "Failed to locate {str(fn)}"
@@ -33,14 +29,10 @@ def setup_mapcontacts(tmp_path_factory):
 @pytest.fixture
 def setup_processcontacts(setup_mapcontacts, tmp_path_factory):
     from basicrta.contacts import ProcessContacts
-    prev_cwd = Path.cwd()
     datadir = setup_mapcontacts.parents[0]
-    os.chdir(datadir)
 
-    try:
+    with work_in(datadir):
         ProcessContacts(7.0, map_name='contacts_max10.0.pkl').run()
-    finally:
-        os.chdir(prev_cwd)
                                                                                              
     fn = datadir / "contacts_7.0.pkl"
     assert fn.exists(), "Failed to locate {str(fn)}"
@@ -58,16 +50,16 @@ def test_mapcontacts(setup_mapcontacts):
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_max_cutoff(tmp_path):
-    os.chdir(tmp_path)
-    u = mda.Universe(PDB, XTC)
-    P88 = u.select_atoms('resname PRO and resid 88')
-    chol = u.select_atoms('resname CHOL and resid 309')
-    MapContacts(u, P88, chol, nslices=1, max_cutoff=12.0).run()
+    with work_in(tmp_path):
+        u = mda.Universe(PDB, XTC)
+        P88 = u.select_atoms('resname PRO and resid 88')
+        chol = u.select_atoms('resname CHOL and resid 309')
+        MapContacts(u, P88, chol, nslices=1, max_cutoff=12.0).run()
 
-    with open('contacts_max12.0.pkl', 'rb') as p:
-        contacts = pickle.load(p)
+        with open('contacts_max12.0.pkl', 'rb') as p:
+            contacts = pickle.load(p)
 
-    assert os.path.exists("contacts_max12.0.pkl"), "contacts_max12.0.pkl was not generated"
+        assert os.path.exists("contacts_max12.0.pkl"), "contacts_max12.0.pkl was not generated"
     assert len(contacts) == 30
     assert (contacts[:, 0] == np.delete(np.arange(69,101), [4,5])).all()
 
