@@ -1,8 +1,36 @@
 from typing import Tuple
+from contextlib import contextmanager
+import os
 
 import MDAnalysis as mda
 from MDAnalysis.coordinates.memory import MemoryReader
 import numpy as np
+
+
+@contextmanager
+def work_in(dirname):
+    """
+    Context manager to temporarily change working directory.
+    
+    Parameters
+    ----------
+    dirname : str or Path
+        Directory to change to temporarily
+        
+    Examples
+    --------
+    >>> with work_in('/tmp'):
+    ...     # Do work in /tmp
+    ...     print(os.getcwd())
+    /tmp
+    >>> # Automatically restored to original directory
+    """
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(dirname)
+        yield
+    finally:
+        os.chdir(original_cwd)
 
 
 def make_Universe(
