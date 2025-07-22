@@ -28,9 +28,17 @@ class ProcessProtein(object):
     :type prot: str, optional
     :param cutoff: Cutoff used in contact analysis.
     :type cutoff: float
+    :param gskip: Gibbs skip parameter for decorrelated samples;
+                  default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522
+    :type gskip: int
+    :param burnin: Burn-in parameter, drop first N samples as equilibration;
+                   default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522
+    :type burnin: int
     """
     
-    def __init__(self, niter, prot, cutoff, gskip, burnin, taus=None, bars=None):
+    def __init__(self, niter, prot, cutoff, 
+                 gskip=1000, burnin=10000, 
+                 taus=None, bars=None):
         self.residues = Results()
         self.niter = niter
         self.prot = prot
@@ -204,9 +212,11 @@ class ProcessProtein(object):
         u.select_atoms('protein').write('tau_bcolored.pdb')
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  #pragma: no cover
+    # the script is tested in the test_cluster.py but cannot be accounted for
+    # in the coverage report
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--nproc', type=int, default=1)
     parser.add_argument('--cutoff', type=float)
     parser.add_argument('--niter', type=int, default=110000)
@@ -215,12 +225,20 @@ if __name__ == "__main__":
             dest='label_cutoff',
             help='Only label residues with tau > '
             'LABEL-CUTOFF * <tau>. ')
-
     parser.add_argument('--structure', type=str, nargs='?')
+    # use  for default values
+    parser.add_argument('--gskip', type=int, default=1000, 
+                        help='Gibbs skip parameter for decorrelated samples;'
+                        'default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522')
+    parser.add_argument('--burnin', type=int, default=10000, 
+                        help='Burn-in parameter, drop first N samples as equilibration;'
+                        'default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522')
+
     args = parser.parse_args()
 
-    pp = ProcessProtein(args.niter, args.prot, args.cutoff)
+    pp = ProcessProtein(args.niter, args.prot, args.cutoff, 
+                        gskip=args.gskip, burnin=args.burnin)
     pp.reprocess(nproc=args.nproc)
-    pp.collect_results()
+    pp.get_taus()
     pp.write_data()
     pp.plot_protein(label_cutoff=args.label_cutoff)
