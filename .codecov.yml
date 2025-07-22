@@ -1,7 +1,9 @@
 # Codecov configuration to make it a bit less noisy
 coverage:
   status:
-    patch: false
+    patch:
+      default:
+        threshold: 5%
     project:
       default:
         threshold: 50%
@@ -13,4 +15,4 @@ comment:
   flags: null
   paths: null
 ignore:
-  - "basicrta/_version.py"
+  - "*/tests/*"

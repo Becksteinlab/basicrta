@@ -212,7 +212,9 @@ class ProcessProtein(object):
         u.select_atoms('protein').write('tau_bcolored.pdb')
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  #pragma: no cover
+    # the script is tested in the test_cluster.py but cannot be accounted for
+    # in the coverage report
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--nproc', type=int, default=1)
