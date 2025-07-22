@@ -6,10 +6,10 @@ Tests for the ProcessProtein class in the cluster module.
 
 import pytest
 import numpy as np
-import os
 import sys
 from unittest.mock import patch, MagicMock, call
 from basicrta.cluster import ProcessProtein
+from basicrta.tests.utils import work_in
 
 
 class TestProcessProtein:
@@ -174,6 +174,144 @@ class TestProcessProtein:
         _, kwargs = mock_plot_protein.call_args
         assert 'label_cutoff' in kwargs
         assert kwargs['label_cutoff'] == 2.5
+
+    def test_write_data_with_existing_data(self, tmp_path):
+        """Test write_data method when taus and bars are already set."""
+        pp = ProcessProtein(niter=110000, prot="test_protein", cutoff=7.0)
+        
+        # Set up test data as numpy arrays (matching the actual implementation)
+        pp.residues = np.array(["R100", "R101", "R102"])
+        pp.taus = np.array([1.0, 2.0, 3.0])
+        pp.bars = np.array([[0.5, 0.6, 0.7], [1.5, 1.6, 1.7]])
+        
+        # Create output file in temporary directory
+        output_file = tmp_path / "test_taus"
+        
+        # Call write_data
+        pp.write_data(str(output_file))
+        
+        # Verify the file was created
+        assert output_file.with_suffix('.npy').exists()
+        
+        # Load and verify the data
+        saved_data = np.load(str(output_file) + '.npy')
+        
+        # Expected data format: [resid, tau, CI_lower, CI_upper]
+        expected_data = np.array([
+            [100, 1.0, 0.5, 1.5],  # R100 -> 100
+            [101, 2.0, 0.6, 1.6],  # R101 -> 101
+            [102, 3.0, 0.7, 1.7]   # R102 -> 102
+        ])
+        
+        assert np.array_equal(saved_data, expected_data)
+
+    @patch('basicrta.cluster.ProcessProtein.get_taus')
+    def test_write_data_calls_get_taus_when_needed(self, mock_get_taus, tmp_path):
+        """Test write_data method calls get_taus when taus is None."""
+        pp = ProcessProtein(niter=110000, prot="test_protein", cutoff=7.0)
+        
+        # Define the test data
+        test_taus = np.array([1.5, 2.5, 3.5])
+        test_bars = np.array([[0.3, 0.4, 0.5], [1.7, 1.8, 1.9]])
+        test_residues = np.array(["R200", "R201", "R202"])
+        
+        # Set up mock to return values AND set instance attributes (like real get_taus)
+        def mock_get_taus_side_effect():
+            pp.taus = test_taus
+            pp.bars = test_bars
+            pp.residues = test_residues
+            return test_taus, test_bars
+        
+        mock_get_taus.side_effect = mock_get_taus_side_effect
+        
+        # Create output file in temporary directory
+        output_file = tmp_path / "test_taus_from_get_taus"
+        
+        # Ensure taus is None to trigger get_taus call
+        pp.taus = None
+        
+        # Call write_data
+        pp.write_data(str(output_file))
+        
+        # Verify get_taus was called
+        mock_get_taus.assert_called_once()
+        
+        # Verify the file was created and contains expected data
+        assert output_file.with_suffix('.npy').exists()
+        saved_data = np.load(str(output_file) + '.npy')
+        
+        expected_data = np.array([
+            [200, 1.5, 0.3, 1.7],  # R200 -> 200
+            [201, 2.5, 0.4, 1.8],  # R201 -> 201  
+            [202, 3.5, 0.5, 1.9]   # R202 -> 202
+        ])
+        
+        assert np.array_equal(saved_data, expected_data)
+
+    @patch('basicrta.cluster.glob')
+    @patch('basicrta.cluster.Pool')
+    @patch('basicrta.util.get_bars')
+    def test_get_taus_returns_values(self, mock_get_bars, mock_pool, mock_glob):
+        """Test that get_taus method returns values as documented in docstring."""
+        pp = ProcessProtein(niter=110000, prot="test_protein", cutoff=7.0)
+        
+        # Mock the directory structure
+        mock_glob.return_value = ["basicrta-7.0/R100", "basicrta-7.0/R101"]
+        
+        # Mock the multiprocessing pool to return test data
+        mock_pool_instance = mock_pool.return_value.__enter__.return_value
+        mock_imap_results = [
+            ("R100", [0.1, 1.5, 2.8], "path1"),
+            ("R101", [0.2, 2.0, 3.2], "path2")
+        ]
+        mock_pool_instance.imap.return_value = mock_imap_results
+        
+        # Mock get_bars to return test confidence intervals
+        test_bars = np.array([[0.5, 0.6], [2.5, 2.6]])
+        mock_get_bars.return_value = test_bars
+        
+        # Call get_taus and verify it returns values
+        result = pp.get_taus(nproc=1)
+        
+        # Verify the method returns a tuple as documented
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        
+        returned_taus, returned_bars = result
+        
+        # Verify the returned values match the instance attributes
+        assert np.array_equal(returned_taus, pp.taus)
+        assert np.array_equal(returned_bars, pp.bars)
+        
+        # Verify the values are what we expect
+        expected_taus = np.array([1.5, 2.0])  # Middle values from tau arrays
+        assert np.array_equal(returned_taus, expected_taus)
+        assert np.array_equal(returned_bars, test_bars)
+
+    def test_write_data_with_default_filename(self, tmp_path):
+        """Test write_data method uses default filename when none provided."""
+        pp = ProcessProtein(niter=110000, prot="test_protein", cutoff=7.0)
+        
+        # Set up test data
+        pp.residues = np.array(["R300", "R301"])
+        pp.taus = np.array([4.0, 5.0])
+        pp.bars = np.array([[0.8, 0.9], [2.0, 2.1]])
+        
+        with work_in(tmp_path):
+            # Call write_data without filename (should use default)
+            pp.write_data()
+            
+            # Verify default file was created
+            default_file = tmp_path / "tausout.npy"
+            assert default_file.exists()
+            
+            # Verify data integrity
+            saved_data = np.load(default_file)
+            expected_data = np.array([
+                [300, 4.0, 0.8, 2.0],
+                [301, 5.0, 0.9, 2.1]
+            ])
+            assert np.array_equal(saved_data, expected_data)
 
 
 class TestClusterScript:
