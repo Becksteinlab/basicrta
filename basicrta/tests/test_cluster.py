@@ -248,6 +248,46 @@ class TestProcessProtein:
         
         assert np.array_equal(saved_data, expected_data)
 
+    @patch('basicrta.cluster.glob')
+    @patch('basicrta.cluster.Pool')
+    @patch('basicrta.util.get_bars')
+    def test_get_taus_returns_values(self, mock_get_bars, mock_pool, mock_glob):
+        """Test that get_taus method returns values as documented in docstring."""
+        pp = ProcessProtein(niter=110000, prot="test_protein", cutoff=7.0)
+        
+        # Mock the directory structure
+        mock_glob.return_value = ["basicrta-7.0/R100", "basicrta-7.0/R101"]
+        
+        # Mock the multiprocessing pool to return test data
+        mock_pool_instance = mock_pool.return_value.__enter__.return_value
+        mock_imap_results = [
+            ("R100", [0.1, 1.5, 2.8], "path1"),
+            ("R101", [0.2, 2.0, 3.2], "path2")
+        ]
+        mock_pool_instance.imap.return_value = mock_imap_results
+        
+        # Mock get_bars to return test confidence intervals
+        test_bars = np.array([[0.5, 0.6], [2.5, 2.6]])
+        mock_get_bars.return_value = test_bars
+        
+        # Call get_taus and verify it returns values
+        result = pp.get_taus(nproc=1)
+        
+        # Verify the method returns a tuple as documented
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        
+        returned_taus, returned_bars = result
+        
+        # Verify the returned values match the instance attributes
+        assert np.array_equal(returned_taus, pp.taus)
+        assert np.array_equal(returned_bars, pp.bars)
+        
+        # Verify the values are what we expect
+        expected_taus = np.array([1.5, 2.0])  # Middle values from tau arrays
+        assert np.array_equal(returned_taus, expected_taus)
+        assert np.array_equal(returned_bars, test_bars)
+
     def test_write_data_with_default_filename(self, tmp_path):
         """Test write_data method uses default filename when none provided."""
         pp = ProcessProtein(niter=110000, prot="test_protein", cutoff=7.0)
@@ -257,7 +297,6 @@ class TestProcessProtein:
         pp.taus = np.array([4.0, 5.0])
         pp.bars = np.array([[0.8, 0.9], [2.0, 2.1]])
         
-        # Use work_in context manager to temporarily change directory
         with work_in(tmp_path):
             # Call write_data without filename (should use default)
             pp.write_data()
