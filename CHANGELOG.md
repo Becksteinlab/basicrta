@@ -19,9 +19,15 @@ The rules for this file:
 
 ### Authors
 * @rjoshi44
+* @copilot
+* @orbeckst
 
-## Fixed
+### Fixed
 * fixed contact script (issue #34)
+* Fixed ProcessProtein command-line interface to accept gskip and burnin 
+  parameters, resolving TypeError in script execution. Added --gskip and 
+  --burnin arguments to cluster.py with default values from the research 
+  paper (gskip=1000, burnin=10000) (Issue #37)
 
  
 ## [1.1.1] - 2025-07-18
