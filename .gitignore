@@ -6,6 +6,7 @@ dist/
 # Test artifacts
 basicrta-*/
 *.pkl
+.coverage
 
 # editor files
 *~
