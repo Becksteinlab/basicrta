@@ -39,7 +39,7 @@ class ProcessProtein(object):
     def __init__(self, niter, prot, cutoff, 
                  gskip=1000, burnin=10000, 
                  taus=None, bars=None):
-        self.residues = Results()
+        self.residues = Results() # TODO: double-check that we need to use this, it gets set in reprocess/get_taus
         self.niter = niter
         self.prot = prot
         self.cutoff = cutoff
@@ -150,7 +150,7 @@ class ProcessProtein(object):
         setattr(self, 'bars', bars)
         setattr(self, 'residues', np.array(residues))
         setattr(self, 'files', np.array(results))
-        #return taus[:, 1], bars
+        return taus[:, 1], bars
 
     def write_data(self, fname='tausout'):
         r"""Write :math:`\tau` values with 95\% confidence interval to a numpy
@@ -163,9 +163,10 @@ class ProcessProtein(object):
         if self.taus is None:
             taus, bars = self.get_taus()
 
-        keys = self.residues.keys()
-        residues = np.array([int(res[1:]) for res in keys])
-        data = np.stack((residues, taus, bars[0], bars[1]))
+        # Handle residues as numpy array (from reprocess/get_taus methods)
+        # TODO: double-check that we need to use res[1:] and can't get this easier
+        residues = np.array([int(res[1:]) for res in self.residues])
+        data = np.stack((residues, self.taus, self.bars[0], self.bars[1]))
         np.save(fname, data.T)
 
     def plot_protein(self, **kwargs):

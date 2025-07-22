@@ -28,6 +28,11 @@ The rules for this file:
   parameters, resolving TypeError in script execution. Added --gskip and 
   --burnin arguments to cluster.py with default values from the research 
   paper (gskip=1000, burnin=10000) (Issue #37)
+* Fixed ProcessProtein.write_data() method to handle residues as numpy array 
+  instead of dictionary, resolving AttributeError when calling the method 
+  after reprocess() or get_taus(). Also fixed get_taus() method to return 
+  values as documented. Added comprehensive test coverage for write_data() 
+  functionality (Issue #37)
 
  
 ## [1.1.1] - 2025-07-18
