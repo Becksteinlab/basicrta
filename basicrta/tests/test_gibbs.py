@@ -63,17 +63,23 @@ def mock_contact_file(tmp_path, synthetic_timeseries):
     """
     from basicrta.tests.utils import make_Universe
     
-    # Create simple test Universe for ag1 and ag2 with resnames and resids attributes
-    ag1_universe = make_Universe(extras=('resnames', 'resids'), size=(50, 10, 1))  # 50 atoms, 10 residues
-    ag2_universe = make_Universe(extras=('resnames', 'resids'), size=(100, 20, 1))  # 100 atoms, 20 residues
+    # Create simple test Universe for ag1 and ag2 with resnames and resids topology attributes
+    residue_names = ['TRP', 'VAL', 'ALA', 'GLY', 'PHE', 'LEU', 'SER', 'THR', 'ASP', 'GLU']
+    target_resids = [313, 314, 315, 316, 317, 318, 319, 320, 321, 322]
+    
+    # Create universe with topology attributes and values in one call
+    ag1_universe = make_Universe(
+        extras={
+            'resnames': residue_names[:10],  # 10 residues
+            'resids': target_resids[:10]
+        }, 
+        size=(50, 10, 1)  # 50 atoms, 10 residues
+    )
+    ag2_universe = make_Universe(size=(100, 20, 1))  # 100 atoms, 20 residues (no special attributes needed)
     
     # Create AtomGroups
-    ag1 = ag1_universe.atoms[:50]  # All atoms for ag1
-    ag2 = ag2_universe.atoms[:100]  # All atoms for ag2
-    
-    # Set residue names and IDs manually for testing
-    ag1.residues.resnames[:] = ['TRP', 'VAL', 'ALA', 'GLY', 'PHE'] * 2  # Fill with test names
-    ag1.residues.resids[:] = [313, 314, 315, 316, 317, 318, 319, 320, 321, 322]  # Test residue IDs
+    ag1 = ag1_universe.atoms
+    ag2 = ag2_universe.atoms
     
     # Create contact data structure
     times = synthetic_timeseries['times']
@@ -307,6 +313,63 @@ class TestGibbsSampler:
         assert parallel_gibbs.ncomp == 5, "Number of components should be stored"
         assert parallel_gibbs.niter == 50000, "Number of iterations should be stored"
         assert parallel_gibbs.cutoff == 7.0, "Cutoff should be extracted from filename"
+
+
+    def test_parallel_gibbs_run_method(self, tmp_path, mock_contact_file, synthetic_timeseries):
+        """Test the run() method for ParallelGibbs class with real multiprocessing."""
+        
+        # Change to tmp_path for output
+        with work_in(tmp_path):
+            # Initialize ParallelGibbs with smaller parameters for faster testing
+            parallel_gibbs = ParallelGibbs(
+                contacts=mock_contact_file,
+                nproc=2,  # Use 2 processes for testing
+                ncomp=2,  # Use fewer components for speed
+                niter=1000  # Smaller iteration count for testing
+            )
+            
+            # Test initialization
+            assert parallel_gibbs.contacts == mock_contact_file
+            assert parallel_gibbs.nproc == 2
+            assert parallel_gibbs.ncomp == 2
+            assert parallel_gibbs.niter == 1000
+            assert parallel_gibbs.cutoff == 7.0
+            
+            # Run ParallelGibbs on residue 313 (which exists in our mock contact file)
+            parallel_gibbs.run(run_resids=[313])
+            
+            # Verify that the expected output directory structure was created
+            expected_residue_dir = tmp_path / f"basicrta-{parallel_gibbs.cutoff}" / "W313"
+            assert expected_residue_dir.exists(), f"Residue directory should be created: {expected_residue_dir}"
+            
+            # Verify that the Gibbs sampler output file was created
+            expected_gibbs_file = expected_residue_dir / f"gibbs_{parallel_gibbs.niter}.pkl"
+            assert expected_gibbs_file.exists(), f"Gibbs output file should be created: {expected_gibbs_file}"
+            
+            # Load and verify the Gibbs sampler results
+            from basicrta.gibbs import Gibbs
+            gibbs_result = Gibbs.load(str(expected_gibbs_file))
+            
+            # Verify the loaded Gibbs sampler has the expected properties
+            assert gibbs_result.residue == 'W313', "Residue should match"
+            assert gibbs_result.ncomp == 2, "Number of components should match"
+            assert gibbs_result.niter == 1000, "Number of iterations should match"
+            assert gibbs_result.cutoff == 7.0, "Cutoff should match"
+            
+            # Verify that the Gibbs sampler ran successfully
+            assert hasattr(gibbs_result, 'mcweights'), "Should have mcweights"
+            assert hasattr(gibbs_result, 'mcrates'), "Should have mcrates"
+            assert np.all(gibbs_result.mcweights >= 0), "mcweights should be non-negative"
+            assert np.all(gibbs_result.mcrates >= 0), "mcrates should be non-negative"
+            
+            # Check that we have the expected number of samples
+            expected_samples = (gibbs_result.niter + 1) // gibbs_result.g
+            assert gibbs_result.mcweights.shape[0] == expected_samples, "Should have correct number of weight samples"
+            assert gibbs_result.mcrates.shape[0] == expected_samples, "Should have correct number of rate samples"
+            
+            # Verify that the residence times used match our synthetic data
+            assert len(gibbs_result.times) == len(synthetic_timeseries['times']), "Should use all synthetic residence times"
+            assert np.allclose(gibbs_result.times, synthetic_timeseries['times']), "Residence times should match synthetic data"
 
 
     def test_gibbs_sampler_old_style_input(self, tmp_path, synthetic_timeseries):
