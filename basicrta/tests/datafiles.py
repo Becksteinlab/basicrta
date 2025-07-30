@@ -30,6 +30,10 @@ _data_ref = resources.files('basicrta.tests.data')
 times = np.load((_data_ref / 'times.npy').as_posix())
 PDB = (_data_ref / 'prot_chol.pdb').as_posix()
 XTC = (_data_ref / 'prot_chol.xtc').as_posix()
+PDB_PAPE_1 = (_data_ref / 'prestin' /'protein_pape1.pdb.bz2').as_posix()
+XTC_PAPE_1 =  (_data_ref / 'prestin' /'protein_pape1_20ns.xtc').as_posix()
+
+
 # This should be the last line: clean up namespace
 del resources
 
