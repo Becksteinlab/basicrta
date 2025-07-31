@@ -49,6 +49,9 @@ doc = [
 source = "https://github.com/becksteinlab/basicrta"
 documentation = "https://basicrta.readthedocs.io"
 
+[project.scripts]
+basicrta = "basicrta.cli:main"
+
 [tool.setuptools]
 py-modules = []
 
