@@ -364,23 +364,9 @@ class CombineContacts(object):
         
         return self.output_name
 
-
-if __name__ == '__main__':
-    """DOCSSS
-    """
-    import argparse
-    parser = argparse.ArgumentParser(description="Create the primary contact \
-                                     map and collect contacts based on the \
-                                     desired cutoff distance")
-    parser.add_argument('--top', type=str, help="Topology")
-    parser.add_argument('--traj', type=str)
-    parser.add_argument('--sel1', type=str)
-    parser.add_argument('--sel2', type=str)
-    parser.add_argument('--cutoff', type=float)
-    parser.add_argument('--nproc', type=int, default=1)
-    parser.add_argument('--nslices', type=int, default=100)
+def main():
+    parser = get_parser()
     args = parser.parse_args()
-
     u = mda.Universe(args.top, args.traj)
     cutoff, nproc, nslices = args.cutoff, args.nproc, args.nslices
     ag1 = u.select_atoms(args.sel1)
@@ -395,4 +381,26 @@ if __name__ == '__main__':
         print(f"using existing {mapname}")
 
     ProcessContacts(cutoff, mapname, nproc=nproc).run()
+
+
+def get_parser():
+    import argparse
+    parser = argparse.ArgumentParser(description="Create the primary contact \
+                                     map and collect contacts based on the \
+                                     desired cutoff distance")
+    parser.add_argument('--top', type=str, help="Topology")
+    parser.add_argument('--traj', type=str)
+    parser.add_argument('--sel1', type=str)
+    parser.add_argument('--sel2', type=str)
+    parser.add_argument('--cutoff', type=float)
+    parser.add_argument('--nproc', type=int, default=1)
+    parser.add_argument('--nslices', type=int, default=100)
+    return parser
+
+
+if __name__ == '__main__':
+    exit(main())
+    """DOCSSS
+    """
+
 
