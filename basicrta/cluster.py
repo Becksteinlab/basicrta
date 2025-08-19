@@ -37,7 +37,7 @@ class ProcessProtein(object):
     """
     
     def __init__(self, niter, prot, cutoff, 
-                 gskip=1000, burnin=10000, 
+                 gskip=100, burnin=10000, 
                  taus=None, bars=None):
         self.residues = Results() # TODO: double-check that we need to use this, it gets set in reprocess/get_taus
         self.niter = niter
@@ -58,7 +58,9 @@ class ProcessProtein(object):
                 result = f'{adir}/gibbs_{self.niter}.pkl'
                 g = Gibbs().load(result)
                 if process:
-                    g.gskip = self.gskip
+                    # NOTE: Gibbs stores samples at Gibbs.g steps and uses Gibbs.gskip to sub-sample 
+                    # The number of independent samples are niter // (Gibbs.g * Gibbs.gskip)
+                    g.gskip = self.gskip // g.g
                     g.burnin = self.burnin
                     g.process_gibbs()
                 tau = g.estimate_tau()
@@ -121,6 +123,7 @@ class ProcessProtein(object):
         :rtype: tuple
         
         """
+        # TODO: Refactor to avoid code dublication with self.reprocess
         from basicrta.util import get_bars
 
         dirs = np.array(glob(f'basicrta-{self.cutoff}/?[0-9]*'))
@@ -228,7 +231,7 @@ if __name__ == "__main__":  #pragma: no cover
             'LABEL-CUTOFF * <tau>. ')
     parser.add_argument('--structure', type=str, nargs='?')
     # use  for default values
-    parser.add_argument('--gskip', type=int, default=1000, 
+    parser.add_argument('--gskip', type=int, default=100, 
                         help='Gibbs skip parameter for decorrelated samples;'
                         'default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522')
     parser.add_argument('--burnin', type=int, default=10000, 
@@ -240,6 +243,5 @@ if __name__ == "__main__":  #pragma: no cover
     pp = ProcessProtein(args.niter, args.prot, args.cutoff, 
                         gskip=args.gskip, burnin=args.burnin)
     pp.reprocess(nproc=args.nproc)
-    pp.get_taus()
     pp.write_data()
     pp.plot_protein(label_cutoff=args.label_cutoff)
