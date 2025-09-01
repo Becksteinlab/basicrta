@@ -265,6 +265,8 @@ class TestCombineContacts:
             ncomp=2,  # Use 2 components for stability
             niter=1000,  # 1000 steps as requested
             burnin=5,   # 5 burnin steps as requested
+            g=50,
+            gskip=1,
             cutoff=7.0  # Set cutoff for directory creation
         )
         

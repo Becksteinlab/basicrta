@@ -116,6 +116,23 @@ class Gibbs(object):
                    directory to load/save results. Allows for multiple cutoffs
                    to be tested in directory containing contacts.
     :type cutoff: float
+    :param g: Gibbs skip parameter for decorrelated samples;
+              only save every `g` samples from full Gibbs sampler chain;
+              default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522
+              (NOTE: this value is called *gskip* in cluster.py)
+    :type g: int
+    :param burnin: Burn-in parameter, drop first `burnin` samples as equilibration;
+                   default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522
+    :type burnin: int
+    :param gskip: Process data from the subsampled chain (ever `g` samples) at a 
+                  coarser skip interval of `gskip` samples. Thus, in total, samples
+                  are taken at ``g * gskip`` steps from the full chain.
+                  (This is useful for sensitivity analysis where we run the chain with 
+                  a small `g` value and save many samples and then use `gskip` to process
+                  samples at increasingly larger intervals without having to re-run the 
+                  chain.) The default value of 1 means that the samples are processed at
+                  every `g` samples from the full chain.
+    :type gskip: int
 
     EXAMPLE
     -------
@@ -139,7 +156,7 @@ class Gibbs(object):
     """
 
     def __init__(self, times=None, residue=None, loc=0, ncomp=15, niter=110000,
-                 cutoff=None, g=50, burnin=10000, gskip=2):
+                 cutoff=None, g=100, burnin=10000, gskip=1):
         self.times = times
         self.residue = residue
         self.niter = niter
