@@ -8,6 +8,7 @@ from numpy.random import default_rng
 from tqdm import tqdm
 from MDAnalysis.analysis.base import Results
 from basicrta.util import confidence_interval
+import multiprocessing
 from multiprocessing import Pool, Lock
 import MDAnalysis as mda
 from basicrta import istarmap
@@ -47,8 +48,6 @@ class ParallelGibbs(object):
         :param run_resids: Resid(s) for which to run a Gibbs sampler. 
         :type run_resids: int or list, optional
         """
-        from basicrta.util import run_residue
-
         with open(self.contacts, 'r+b') as f:
             contacts = pickle.load(f)
 
@@ -94,6 +93,38 @@ class ParallelGibbs(object):
                     pass
             except KeyboardInterrupt:
                 pass
+
+
+def run_residue(residue, time, proc, ncomp, niter, cutoff, g, from_combined=False):
+    """Run Gibbs sampler for a single residue.
+    
+    :param residue: Residue name
+    :type residue: str
+    :param time: Residence times data
+    :type time: array-like
+    :param proc: Process number for progress bar positioning
+    :type proc: int
+    :param ncomp: Number of mixture components
+    :type ncomp: int
+    :param niter: Number of iterations
+    :type niter: int
+    :param cutoff: Cutoff value used in contact analysis
+    :type cutoff: float
+    :param g: Gibbs skip parameter
+    :type g: int
+    :param from_combined: Whether data comes from combined contacts
+    :type from_combined: bool
+    """
+    x = np.array(time)
+    if len(x) != 0:
+        try:
+            proc = int(multiprocessing.current_process().name.split('-')[-1])
+        except ValueError:
+            proc = 1
+
+    gib = Gibbs(x, residue, proc, ncomp=ncomp, niter=niter, cutoff=cutoff, g=g)
+    gib._from_combined_contacts = from_combined
+    gib.run()
 
 
 class Gibbs(object):
