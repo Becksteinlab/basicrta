@@ -71,8 +71,8 @@ class ProcessProtein(object):
                     if ggskip < 1:
                         ggskip = 1
                         warnings.warn(f"WARNING: gskip={self.gskip} is less than g={g.g}, setting gskip to 1")
-                    # NOTE:Gibbs.gskip is the multiplier for Gibbs.g (the save interval) and the gskip
-                    # here is the total skip interval for the Gibbs sampler: gskip = g.g * g.gskip
+                    # NOTE: Gibbs samples are saved every g.g steps, then sub-sampled by g.gskip
+                    # Total skip interval = g.g * g.gskip, giving niter // (g.g * g.gskip) independent samples
                     g.gskip = ggskip       # process every g.g * g.gskip samples from full chain
                     g.burnin = self.burnin
                     g.process_gibbs()
@@ -252,6 +252,5 @@ if __name__ == "__main__":  #pragma: no cover
     pp = ProcessProtein(args.niter, args.prot, args.cutoff, 
                         gskip=args.gskip, burnin=args.burnin)
     pp.reprocess(nproc=args.nproc)
-    pp.get_taus()
     pp.write_data()
     pp.plot_protein(label_cutoff=args.label_cutoff)

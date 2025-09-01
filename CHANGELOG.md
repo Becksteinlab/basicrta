@@ -19,6 +19,7 @@ The rules for this file:
 
 ### Authors
 * @orbeckst
+* @rjoshi44
 
 ### Fixed
 * Fixed setting of gskip in ProcessProtein/cluster.py command line interface:
