@@ -15,6 +15,18 @@ The rules for this file:
     * YYYY-MM-DD date format (following ISO 8601)
   * accompany each entry with github issue/PR number (Issue #xyz)
 -->
+## [1.1.3] - UNRELEASES
+
+### Authors
+* @orbeckst
+
+### Fixed
+* Fixed setting of gskip in ProcessProtein/cluster.py command line interface:
+  set the default to 100 (as in the paper) and ensure that the correct value
+  is used as Gibbs.gskip (which is relative to the save skip step of Gibbs.g)
+  (Issue #48)
+  
+
 ## [1.1.2] - 2025-07-22
 
 ### Authors
