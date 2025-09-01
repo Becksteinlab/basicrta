@@ -127,6 +127,16 @@ class TestGibbsSampler:
             'cutoff': 7.0,
             'g': 100
         },
+        {
+            'times': None,  # Will be set from fixture
+            'residue': 'W313',
+            'ncomp': 2,
+            'niter': 1000,
+            'burnin': 5,
+            'cutoff': 7.0,
+            'g': 50,
+            'gskip': 2
+        },        
     ])
     def test_gibbs_run_method(self, tmp_path, synthetic_timeseries, init_kwargs):
         """Test the run() method for Gibbs class with synthetic data."""

@@ -15,6 +15,25 @@ The rules for this file:
     * YYYY-MM-DD date format (following ISO 8601)
   * accompany each entry with github issue/PR number (Issue #xyz)
 -->
+## [1.1.3] - UNRELEASES
+
+### Authors
+* @orbeckst
+* @rjoshi44
+
+### Fixed
+* Fixed setting of gskip in ProcessProtein/cluster.py command line interface:
+  set the default to 100 (as in the paper) and ensure that the correct value
+  is used as Gibbs.gskip (which is relative to the save skip step of Gibbs.g)
+  (Issue #48)
+
+### Changed
+* Default kwargs for the skipping in the Gibbs sampler are now
+  gibbs.Gibbs(g=100, gskip=1) (used to be g=50, gskip=2) but for most users
+  gskip for processing data is not important and it makes more sense to focus 
+  on g as the stride at which we sample AND process data (#48, PR #49)
+
+
 ## [1.1.2] - 2025-07-22
 
 ### Authors

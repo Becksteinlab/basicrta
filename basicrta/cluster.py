@@ -1,5 +1,6 @@
 import os
 import gc
+import warnings
 import numpy as np
 from tqdm import tqdm
 from multiprocessing import Pool, Lock
@@ -29,17 +30,21 @@ class ProcessProtein(object):
     :param cutoff: Cutoff used in contact analysis.
     :type cutoff: float
     :param gskip: Gibbs skip parameter for decorrelated samples;
+                  only save every `gskip` samples from full Gibbs sampler chain;
                   default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522
+                  When the sampled Markov chain is loaded, then the output is already
+                  saved at every `Gibbs.g` samples. We calculate a new `gskip` value to 
+                  get close to the desired `gskip` value. 
     :type gskip: int
-    :param burnin: Burn-in parameter, drop first N samples as equilibration;
+    :param burnin: Burn-in parameter, drop first `burnin` samples as equilibration;
                    default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522
     :type burnin: int
     """
     
     def __init__(self, niter, prot, cutoff, 
-                 gskip=1000, burnin=10000, 
+                 gskip=100, burnin=10000, 
                  taus=None, bars=None):
-        self.residues = Results() # TODO: double-check that we need to use this, it gets set in reprocess/get_taus
+        self.residues = None
         self.niter = niter
         self.prot = prot
         self.cutoff = cutoff
@@ -55,16 +60,23 @@ class ProcessProtein(object):
         if os.path.exists(f'{adir}/gibbs_{self.niter}.pkl'):
             result = f'{adir}/gibbs_{self.niter}.pkl'
             try:
-                result = f'{adir}/gibbs_{self.niter}.pkl'
                 g = Gibbs().load(result)
-                if process:
-                    g.gskip = self.gskip
-                    g.burnin = self.burnin
-                    g.process_gibbs()
-                tau = g.estimate_tau()
             except:
                 result = None
                 tau = [0, 0, 0]
+            else:
+                if process:
+                    # calculate the new g.gskip value:
+                    ggskip = self.gskip // g.g
+                    if ggskip < 1:
+                        ggskip = 1
+                        warnings.warn(f"WARNING: gskip={self.gskip} is less than g={g.g}, setting gskip to 1")
+                    # NOTE: Gibbs samples are saved every g.g steps, then sub-sampled by g.gskip
+                    # Total skip interval = g.g * g.gskip, giving niter // (g.g * g.gskip) independent samples
+                    g.gskip = ggskip       # process every g.g * g.gskip samples from full chain
+                    g.burnin = self.burnin
+                    g.process_gibbs()
+                tau = g.estimate_tau()
         else:
             result = None
             tau = [0, 0, 0]
@@ -228,7 +240,7 @@ if __name__ == "__main__":  #pragma: no cover
             'LABEL-CUTOFF * <tau>. ')
     parser.add_argument('--structure', type=str, nargs='?')
     # use  for default values
-    parser.add_argument('--gskip', type=int, default=1000, 
+    parser.add_argument('--gskip', type=int, default=100, 
                         help='Gibbs skip parameter for decorrelated samples;'
                         'default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522')
     parser.add_argument('--burnin', type=int, default=10000, 
@@ -240,6 +252,5 @@ if __name__ == "__main__":  #pragma: no cover
     pp = ProcessProtein(args.niter, args.prot, args.cutoff, 
                         gskip=args.gskip, burnin=args.burnin)
     pp.reprocess(nproc=args.nproc)
-    pp.get_taus()
     pp.write_data()
     pp.plot_protein(label_cutoff=args.label_cutoff)
