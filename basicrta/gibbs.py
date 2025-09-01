@@ -301,8 +301,8 @@ class Gibbs(object):
                 pindicator[tmpind, mapinds[i]] += 1
 
         pindicator = (pindicator.T / pindicator.sum(axis=1)).T
-        setattr(self.processed_results, 'indicator', pindicator)
-        setattr(self.processed_results, 'labels', all_labels)
+        self.processed_results.indicator = pindicator
+        self.processed_results.labels = all_labels
 
     def process_gibbs(self, show=True):
         r"""
@@ -329,9 +329,8 @@ class Gibbs(object):
 
         self.cluster(n_init=117, n_components=lmode)
         labels, presorts = mixture_and_plot(self, show=show)
-        setattr(self.processed_results, 'labels', labels)
-        setattr(self.processed_results, 'indicator',
-                self.processed_results.indicator[:, presorts])
+        self.processed_results.labels = labels
+        self.processed_results.indicator = self.processed_results.indicator[:, presorts]
 
         attrs = ["weights", "rates", "ncomp", "residue", "iteration", "niter"]
         values = [fweights, frates, lmode, self.residue, indices, self.niter]
@@ -364,7 +363,7 @@ class Gibbs(object):
             # sample indicator
             s = np.argmax(rng.multinomial(1, z), axis=1)
             indicator[i] = s
-        setattr(self, 'indicator', indicator)
+        self.indicator = indicator
         return indicator[burnin_ind::self.gskip]
 
     def save(self):
@@ -719,8 +718,8 @@ class Gibbs(object):
         params = np.array([[wh[1][np.argmax(wh[0])], rh[1][np.argmax(rh[0])]]
                            for wh, rh in zip(whists, rhists)])
 
-        setattr(rp, 'parameters', params)
-        setattr(rp, 'intervals', np.array([wbounds, rbounds]))
+        rp.parameters = params
+        rp.intervals = np.array([wbounds, rbounds])
 
     def estimate_tau(self):
         r"""

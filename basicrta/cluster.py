@@ -119,10 +119,10 @@ class ProcessProtein(object):
 
         taus = np.array(taus)
         bars = get_bars(taus)
-        setattr(self, 'taus', taus[:, 1])
-        setattr(self, 'bars', bars)
-        setattr(self, 'residues', np.array(residues))
-        setattr(self, 'files', np.array(results))
+        self.taus = taus[:, 1]
+        self.bars = bars
+        self.residues = np.array(residues)
+        self.files = np.array(results)
 
     def get_taus(self, nproc=1):
         r"""Get :math:`\tau` and 95\% confidence interval bounds for the slowest
@@ -158,10 +158,10 @@ class ProcessProtein(object):
         
         taus = np.array(taus)
         bars = get_bars(taus)
-        setattr(self, 'taus', taus[:, 1])
-        setattr(self, 'bars', bars)
-        setattr(self, 'residues', np.array(residues))
-        setattr(self, 'files', np.array(results))
+        self.taus = taus[:, 1]
+        self.bars = bars
+        self.residues = np.array(residues)
+        self.files = np.array(results)
         return taus[:, 1], bars
 
     def write_data(self, fname='tausout'):
