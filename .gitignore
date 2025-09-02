@@ -13,3 +13,4 @@ basicrta-*/
 
 # macOS garbage
 .DS_Store
+build/
