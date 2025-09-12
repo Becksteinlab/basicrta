@@ -122,7 +122,7 @@ def run_residue(residue, time, proc, ncomp, niter, cutoff, g, from_combined=Fals
         except ValueError:
             proc = 1
 
-    gib = Gibbs(x, residue, proc, ncomp=ncomp, niter=niter, cutoff=cutoff, g=g)
+    gib = Gibbs(times=x, residue=residue, loc=proc, ncomp=ncomp, niter=niter, cutoff=cutoff, g=g)
     gib._from_combined_contacts = from_combined
     gib.run()
 
