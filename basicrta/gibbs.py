@@ -8,6 +8,7 @@ from numpy.random import default_rng
 from tqdm import tqdm
 from MDAnalysis.analysis.base import Results
 from basicrta.util import confidence_interval
+import multiprocessing
 from multiprocessing import Pool, Lock
 import MDAnalysis as mda
 from basicrta import istarmap
@@ -47,8 +48,6 @@ class ParallelGibbs(object):
         :param run_resids: Resid(s) for which to run a Gibbs sampler. 
         :type run_resids: int or list, optional
         """
-        from basicrta.util import run_residue
-
         with open(self.contacts, 'r+b') as f:
             contacts = pickle.load(f)
 
@@ -94,6 +93,38 @@ class ParallelGibbs(object):
                     pass
             except KeyboardInterrupt:
                 pass
+
+
+def run_residue(residue, time, proc, ncomp, niter, cutoff, g, from_combined=False):
+    """Run Gibbs sampler for a single residue.
+    
+    :param residue: Residue name
+    :type residue: str
+    :param time: Residence times data
+    :type time: array-like
+    :param proc: Process number for progress bar positioning
+    :type proc: int
+    :param ncomp: Number of mixture components
+    :type ncomp: int
+    :param niter: Number of iterations
+    :type niter: int
+    :param cutoff: Cutoff value used in contact analysis
+    :type cutoff: float
+    :param g: Gibbs skip parameter
+    :type g: int
+    :param from_combined: Whether data comes from combined contacts
+    :type from_combined: bool
+    """
+    x = np.array(time)
+    if len(x) != 0:
+        try:
+            proc = int(multiprocessing.current_process().name.split('-')[-1])
+        except ValueError:
+            proc = 1
+
+    gib = Gibbs(times=x, residue=residue, loc=proc, ncomp=ncomp, niter=niter, cutoff=cutoff, g=g)
+    gib._from_combined_contacts = from_combined
+    gib.run()
 
 
 class Gibbs(object):
@@ -301,8 +332,8 @@ class Gibbs(object):
                 pindicator[tmpind, mapinds[i]] += 1
 
         pindicator = (pindicator.T / pindicator.sum(axis=1)).T
-        setattr(self.processed_results, 'indicator', pindicator)
-        setattr(self.processed_results, 'labels', all_labels)
+        self.processed_results.indicator = pindicator
+        self.processed_results.labels = all_labels
 
     def process_gibbs(self, show=True):
         r"""
@@ -329,9 +360,8 @@ class Gibbs(object):
 
         self.cluster(n_init=117, n_components=lmode)
         labels, presorts = mixture_and_plot(self, show=show)
-        setattr(self.processed_results, 'labels', labels)
-        setattr(self.processed_results, 'indicator',
-                self.processed_results.indicator[:, presorts])
+        self.processed_results.labels = labels
+        self.processed_results.indicator = self.processed_results.indicator[:, presorts]
 
         attrs = ["weights", "rates", "ncomp", "residue", "iteration", "niter"]
         values = [fweights, frates, lmode, self.residue, indices, self.niter]
@@ -364,7 +394,7 @@ class Gibbs(object):
             # sample indicator
             s = np.argmax(rng.multinomial(1, z), axis=1)
             indicator[i] = s
-        setattr(self, 'indicator', indicator)
+        self.indicator = indicator
         return indicator[burnin_ind::self.gskip]
 
     def save(self):
@@ -719,8 +749,8 @@ class Gibbs(object):
         params = np.array([[wh[1][np.argmax(wh[0])], rh[1][np.argmax(rh[0])]]
                            for wh, rh in zip(whists, rhists)])
 
-        setattr(rp, 'parameters', params)
-        setattr(rp, 'intervals', np.array([wbounds, rbounds]))
+        rp.parameters = params
+        rp.intervals = np.array([wbounds, rbounds])
 
     def estimate_tau(self):
         r"""
