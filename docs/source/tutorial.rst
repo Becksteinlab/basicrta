@@ -52,12 +52,12 @@ format as the existing proteins.
 
 Optional parameters ``--gskip`` and ``--burnin`` can be used to control the 
 Gibbs sampler processing. The ``--gskip`` parameter specifies the skip interval
-for decorrelated samples (default: 1000), while ``--burnin`` sets the number 
+for decorrelated samples (default: 100), while ``--burnin`` sets the number 
 of initial samples to discard during equilibration (default: 10000). The 
 default values are taken from the `research paper <https://doi.org/10.1021/acs.jctc.4c01522>`_. ::
 
   python -m basicrta.cluster --niter 110000 --nproc 3 --cutoff 7.0 --prot b2ar \
-  --gskip 1000 --burnin 10000
+  --gskip 100 --burnin 10000
 
 ``basicrta.cluster`` will process the Gibbs samplers, compute :math:`\tau` for
 each residue, plot :math:`\tau` vs resid, and write the data to ``tausout.npy``
