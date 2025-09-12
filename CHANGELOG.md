@@ -15,7 +15,7 @@ The rules for this file:
     * YYYY-MM-DD date format (following ISO 8601)
   * accompany each entry with github issue/PR number (Issue #xyz)
 -->
-## [1.1.3] - UNRELEASES
+## [1.1.3] - 2025-09-11
 
 ### Authors
 * @orbeckst
@@ -28,11 +28,15 @@ The rules for this file:
   (Issue #48)
 
 ### Changed
+The following changes do not functionally change the code but users relying
+on default values need to be aware of the changes to gibbs.Gibbs.
+
 * Default kwargs for the skipping in the Gibbs sampler are now
   gibbs.Gibbs(g=100, gskip=1) (used to be g=50, gskip=2) but for most users
   gskip for processing data is not important and it makes more sense to focus 
   on g as the stride at which we sample AND process data (#48, PR #49)
-
+* internal code refactor and clean-up: moved util.run_residue() to
+  gibbs.run_residue() and use direct assignment instead of setattr() (PR #50)
 
 ## [1.1.2] - 2025-07-22
 
