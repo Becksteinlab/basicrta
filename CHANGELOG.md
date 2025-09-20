@@ -15,6 +15,17 @@ The rules for this file:
     * YYYY-MM-DD date format (following ISO 8601)
   * accompany each entry with github issue/PR number (Issue #xyz)
 -->
+## [1.1.4] - unpublished
+
+### Authors
+* @orbeckst
+
+### Fixed
+* Have cluster.ProcessProtein.reprocess() record "no result" if
+  the gibbs.Gibbs.process_gibbs() step fails due to insufficient 
+  number of samples. Otherwise `python -m cluster` fails to process
+  whole proteins.
+
 ## [1.1.3] - 2025-09-11
 
 ### Authors

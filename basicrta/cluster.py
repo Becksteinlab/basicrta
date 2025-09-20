@@ -75,9 +75,22 @@ class ProcessProtein(object):
                     # Total skip interval = g.g * g.gskip, giving niter // (g.g * g.gskip) independent samples
                     g.gskip = ggskip       # process every g.g * g.gskip samples from full chain
                     g.burnin = self.burnin
-                    g.process_gibbs()
-                tau = g.estimate_tau()
+                    try:
+                        g.process_gibbs()
+                    except ValueError:
+                        # HACK: triggered when we do not have enough samples for clustering
+                        # TODO: make sure elsewhere that we do not save pickle files
+                        #       with insufficient data
+                        # TODO: use a logger and say that we failed for this residue even though
+                        #       sampler data was (supposedly) available
+                        result = None
+                        tau = [0, 0, 0]
+                    else:
+                        tau = g.estimate_tau()
+                else:
+                    tau = g.estimate_tau()
         else:
+            # if the pkl files do not exist
             result = None
             tau = [0, 0, 0]
 
