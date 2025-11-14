@@ -14,10 +14,11 @@ __version__ = version("basicrta")
 commands = ['contacts', 'cluster', 'combine', 'kinetics', 'gibbs']
 
 def main():
+    from basicrta.contacts import get_parser
     parser = argparse.ArgumentParser(prog='basicrta')
     #parser.add_argument('command', help='Step in workflow to execute', nargs='+')
     subparsers = parser.add_subparsers(dest='command')
-
+    subparsers.add_parser(get_parser)
     
 #    parserA = subparsers.add_parser('contacts', help='Ahelp')
 #    parserA.add_argument('--top', type=str, help='Topology')
