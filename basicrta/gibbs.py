@@ -808,7 +808,7 @@ def get_parser():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--contacts')
-    parser.add_argument('--resid', type=int, default=None)
+    parser.add_argument('--resid', type=int)
     parser.add_argument('--nproc', type=int, default=1)
     parser.add_argument('--niter', type=int, default=110000)
     parser.add_argument('--ncomp', type=int, default=15)

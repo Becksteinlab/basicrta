@@ -219,10 +219,10 @@ def get_parser():
     parser.add_argument('--cutoff', type=float)
     parser.add_argument('--niter', type=int, default=110000)
     parser.add_argument('--prot', type=str, default=None, nargs='?')
-    parser.add_argument('--label-cutoff', type=float, default=3,
-            dest='label_cutoff',
-            help='Only label residues with tau > '
-            'LABEL-CUTOFF * <tau>. ')
+    parser.add_argument('--label_cutoff', type=float, default=3,
+                        dest='label_cutoff',
+                        help='Only label residues with tau > '
+                        'LABEL-CUTOFF * <tau>. ')
     parser.add_argument('--structure', type=str, nargs='?')
     # use  for default values
     parser.add_argument('--gskip', type=int, default=1000, 
