@@ -212,10 +212,7 @@ class ProcessProtein(object):
 
         u.select_atoms('protein').write('tau_bcolored.pdb')
 
-
-if __name__ == "__main__":  #pragma: no cover
-    # the script is tested in the test_cluster.py but cannot be accounted for
-    # in the coverage report
+def get_parser():
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--nproc', type=int, default=1)
@@ -234,7 +231,10 @@ if __name__ == "__main__":  #pragma: no cover
     parser.add_argument('--burnin', type=int, default=10000, 
                         help='Burn-in parameter, drop first N samples as equilibration;'
                         'default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522')
+    return parser
 
+def main():
+    parser = get_parser()
     args = parser.parse_args()
 
     pp = ProcessProtein(args.niter, args.prot, args.cutoff, 
@@ -243,3 +243,10 @@ if __name__ == "__main__":  #pragma: no cover
     pp.get_taus()
     pp.write_data()
     pp.plot_protein(label_cutoff=args.label_cutoff)
+
+
+if __name__ == "__main__":  #pragma: no cover
+    # the script is tested in the test_cluster.py but cannot be accounted for
+    # in the coverage report
+    exit(main())
+

@@ -287,7 +287,7 @@ class Gibbs(object):
         setattr(self.processed_results, 'indicator', pindicator)
         setattr(self.processed_results, 'labels', all_labels)
 
-    def process_gibbs(self, show=True):
+    def process_gibbs(self, show=False):
         r"""
         Process the samples collected from the Gibbs sampler.
         :meth:`process_gibbs` can be called multiple times to check the
@@ -804,8 +804,7 @@ class Gibbs(object):
                         's_vs_t.pdf', bbox_inches='tight')
         plt.show()
 
-
-if __name__ == '__main__':
+def get_parser():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--contacts')
@@ -813,6 +812,10 @@ if __name__ == '__main__':
     parser.add_argument('--nproc', type=int, default=1)
     parser.add_argument('--niter', type=int, default=110000)
     parser.add_argument('--ncomp', type=int, default=15)
+    return parser
+
+def main():
+    parser = get_parser()
     args = parser.parse_args()
 
     contact_path = os.path.abspath(args.contacts)
@@ -820,3 +823,6 @@ if __name__ == '__main__':
 
     ParallelGibbs(contact_path, nproc=args.nproc, ncomp=args.ncomp,
                   niter=args.niter).run(run_resids=args.resid)
+
+if __name__ == '__main__':
+    exit(main())

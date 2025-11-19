@@ -203,9 +203,7 @@ class MapKinetics(object):
 
                 d.results.density.export(outname)
 
-
-if __name__ == "__main__":
-    from basicrta.gibbs import Gibbs
+def get_parser():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--gibbs", type=str)
@@ -213,6 +211,11 @@ if __name__ == "__main__":
     parser.add_argument("--top_n", type=int, nargs='?', default=None)
     parser.add_argument("--step", type=int, nargs='?', default=1)
     parser.add_argument("--wdensity", action='store_true')
+    return parser
+
+def main():
+    from basicrta.gibbs import Gibbs
+    parser = get_parser()
     args = parser.parse_args()
 
     g = Gibbs().load(args.gibbs)
@@ -220,3 +223,6 @@ if __name__ == "__main__":
     mk.create_traj(top_n=args.top_n)
     if args.wdensity:
         mk.weighted_densities(step=args.step, top_n=args.top_n)
+
+if __name__ == "__main__":
+    exit(main())

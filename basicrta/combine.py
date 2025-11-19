@@ -137,7 +137,7 @@ class CombineContacts(object):
         
         return self.output_name
 
-if __name__ == "__main__":
+def get_parser():
     """Main function for combining contact files."""
     parser = argparse.ArgumentParser(
         description="Combine contact timeseries from multiple repeat runs. "
@@ -164,7 +164,10 @@ if __name__ == "__main__":
         action='store_true',
         help="Skip compatibility validation (use with caution)"
     )
-    
+    return parser
+
+def main():
+    parser = get_parser()
     args = parser.parse_args()
     
     # Validate input files exist
@@ -207,3 +210,5 @@ if __name__ == "__main__":
         print(f"ERROR: {e}")
         return 1
 
+if __name__ == "__main__":
+    exit(main())    
