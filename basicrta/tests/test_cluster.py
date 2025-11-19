@@ -7,6 +7,7 @@ Tests for the ProcessProtein class in the cluster module.
 import pytest
 import numpy as np
 import sys
+import warnings
 from unittest.mock import patch, MagicMock, call
 from basicrta.cluster import ProcessProtein
 from basicrta.tests.utils import work_in
@@ -22,10 +23,11 @@ class TestProcessProtein:
         assert pp.niter == 110000
         assert pp.prot == "test_protein"
         assert pp.cutoff == 7.0
-        assert pp.gskip == 1000  # Default value from paper
+        assert pp.gskip == 100  # Default value from paper
         assert pp.burnin == 10000  # Default value from paper
         assert pp.taus is None
         assert pp.bars is None
+        assert pp.residues is None
     
     def test_init_with_custom_values(self):
         """Test initialization with custom gskip and burnin values."""
@@ -50,7 +52,7 @@ class TestProcessProtein:
         assert pp["niter"] == 110000
         assert pp["prot"] == "test_protein"
         assert pp["cutoff"] == 7.0
-        assert pp["gskip"] == 1000
+        assert pp["gskip"] == 100
         assert pp["burnin"] == 10000
     
     def test_single_residue_missing_file(self, tmp_path):
@@ -69,8 +71,9 @@ class TestProcessProtein:
         assert tau == [0, 0, 0]
         assert result is None
     
+    @pytest.mark.parametrize("gskip", [111, 100, 50, 10])
     @patch('basicrta.cluster.Gibbs')
-    def test_single_residue_with_file(self, mock_gibbs, tmp_path):
+    def test_single_residue_with_file(self, mock_gibbs, tmp_path, gskip):
         """Test _single_residue method when gibbs file exists."""
         # Create a mock directory structure
         residue_dir = tmp_path / "basicrta-7.0" / "R123"
@@ -83,23 +86,53 @@ class TestProcessProtein:
         # Configure the mock
         mock_gibbs_instance = MagicMock()
         mock_gibbs_instance.estimate_tau.return_value = [0.1, 1.5, 3.0]
+        mock_gibbs_instance.g = 50
         mock_gibbs.return_value.load.return_value = mock_gibbs_instance
         
-        pp = ProcessProtein(niter=110000, prot="test_protein", cutoff=7.0)
+        pp = ProcessProtein(niter=110000, prot="test_protein", gskip=gskip, cutoff=7.0)
         
         # Call the method with processing enabled
-        residue, tau, result = pp._single_residue(str(residue_dir), process=True)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            residue, tau, result = pp._single_residue(str(residue_dir), process=True)
         
-        # Verify results
         assert residue == "R123"
         assert tau == [0.1, 1.5, 3.0]
         assert result == str(gibbs_file)
         
-        # Verify the Gibbs object was configured correctly
-        assert mock_gibbs_instance.gskip == 1000
+        # Verify the Gibbs object was re-configured correctly
+        ggskip = gskip // mock_gibbs_instance.g
+        if ggskip < 1:
+            ggskip = 1
+        assert mock_gibbs_instance.gskip == ggskip
         assert mock_gibbs_instance.burnin == 10000
         mock_gibbs_instance.process_gibbs.assert_called_once()
     
+    @patch('basicrta.cluster.Gibbs')
+    def test_single_residue_with_file_gskip_warning(self, mock_gibbs, tmp_path):
+        """Test _single_residue method warns when gskip is less than g."""
+        # Create a mock directory structure
+        residue_dir = tmp_path / "basicrta-7.0" / "R123"
+        residue_dir.mkdir(parents=True)
+        
+        # Create a mock gibbs pickle file
+        gibbs_file = residue_dir / "gibbs_110000.pkl"
+        gibbs_file.touch()
+        
+        # Configure the mock
+        mock_gibbs_instance = MagicMock()
+        mock_gibbs_instance.estimate_tau.return_value = [0.1, 1.5, 3.0]
+        mock_gibbs_instance.g = 50
+        mock_gibbs.return_value.load.return_value = mock_gibbs_instance
+
+        pp = ProcessProtein(niter=110000, prot="test_protein", gskip=10, cutoff=7.0)
+        with pytest.warns(UserWarning,
+                          match="WARNING: gskip=10 is less than g=50, setting gskip to 1"):
+            residue, tau, result = pp._single_residue(str(residue_dir), process=True)
+
+        assert pp.gskip == 10
+        assert mock_gibbs_instance.gskip == 1
+
     @patch('basicrta.cluster.Gibbs')
     def test_single_residue_exception_handling(self, mock_gibbs, tmp_path):
         """Test _single_residue method handles exceptions gracefully."""
