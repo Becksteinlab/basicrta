@@ -367,7 +367,6 @@ class CombineContacts(object):
 def main():
     parser = get_parser()
     args = parser.parse_args()
-    print(args)
     u = mda.Universe(args.top, args.traj)
     cutoff, nproc, nslices = args.cutoff, args.nproc, args.nslices
     ag1 = u.select_atoms(args.sel1)
