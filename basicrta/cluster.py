@@ -256,6 +256,8 @@ def get_parser():
     parser.add_argument('--burnin', type=int, default=10000, 
                         help='Burn-in parameter, drop first N samples as equilibration;'
                         'default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522')
+    # this is to make the cli work, should be just a temporary solution
+    parser.add_argument('cluster', nargs='?')
     return parser
 
 def main():

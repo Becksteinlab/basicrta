@@ -211,6 +211,8 @@ def get_parser():
     parser.add_argument("--top_n", type=int, nargs='?', default=None)
     parser.add_argument("--step", type=int, nargs='?', default=1)
     parser.add_argument("--wdensity", action='store_true')
+    # this is to make the cli work, should be just a temporary solution
+    parser.add_argument('kinetics', nargs='?')
     return parser
 
 def main():

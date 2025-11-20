@@ -367,6 +367,7 @@ class CombineContacts(object):
 def main():
     parser = get_parser()
     args = parser.parse_args()
+    print(args)
     u = mda.Universe(args.top, args.traj)
     cutoff, nproc, nslices = args.cutoff, args.nproc, args.nslices
     ag1 = u.select_atoms(args.sel1)
@@ -395,6 +396,8 @@ def get_parser():
     parser.add_argument('--cutoff', type=float)
     parser.add_argument('--nproc', type=int, default=1)
     parser.add_argument('--nslices', type=int, default=100)
+    # this is to make the cli work, should be just a temporary solution
+    parser.add_argument('contacts', nargs='?')
     return parser
 
 

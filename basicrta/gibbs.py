@@ -859,6 +859,8 @@ def get_parser():
     parser.add_argument('--nproc', type=int, default=1)
     parser.add_argument('--niter', type=int, default=110000)
     parser.add_argument('--ncomp', type=int, default=15)
+    # this is to make the cli work, should be just a temporary solution
+    parser.add_argument('gibbs', nargs='?')
     return parser
 
 def main():

@@ -164,6 +164,8 @@ def get_parser():
         action='store_true',
         help="Skip compatibility validation (use with caution)"
     )
+    # this is to make the cli work, should be just a temporary solution
+    parser.add_argument('combine', nargs='?')
     return parser
 
 def main():
