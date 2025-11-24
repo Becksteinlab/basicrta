@@ -1,3 +1,13 @@
+"""
+Create contact maps between two atom groups.
+
+This module provides the `MapContacts` class, which creates the initial contact
+map between the two atom groups using a maximum cutoff (`max_cutoff`), which
+provides for quicker processing if creating results for multiple cutoffs. The 
+`ProcessContacts` class takes the initial contact map and creates the processed
+contact map based on the prescribed cutoff.
+"""
+
 from tqdm import tqdm
 from MDAnalysis.lib import distances
 from multiprocessing import Pool, Lock

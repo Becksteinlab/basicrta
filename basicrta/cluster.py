@@ -1,3 +1,7 @@
+"""This module provides the ProcessProtein class, which collects and processes
+Gibbs sampler data.
+"""
+
 import os
 import gc
 import warnings
@@ -11,9 +15,6 @@ from basicrta import istarmap
 from basicrta.gibbs import Gibbs
 gc.enable()
 
-"""This module provides the ProcessProtein class, which collects and processes
-Gibbs sampler data.
-"""
 
 class ProcessProtein(object):
     r"""ProcessProtein is the class that collects and processes Gibbs sampler

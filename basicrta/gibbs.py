@@ -1,3 +1,11 @@
+""" 
+Perform Gibbs samplers and process data.
+
+This module provides the `ParallelGibbs` class, which parallelizes the creation
+of Gibbs samplers for each residue in the contact map. This module also provides
+the `Gibbs` class, which allows for the loading and processing of the gibbs
+sampler data, as well as plotting and saving processed results.
+"""
 import os
 import gc
 import pickle

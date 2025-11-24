@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Command-line interface for combining contact timeseries from multiple repeat runs.
+Combine contact timeseries from multiple repeat runs.
 
 This module provides functionality to combine contact files from multiple 
 trajectory repeats, enabling pooled analysis of binding kinetics.
@@ -138,7 +138,12 @@ class CombineContacts(object):
         return self.output_name
 
 def get_parser():
-    """Main function for combining contact files."""
+    """Create parser, parse command line arguments, and return ArgumentParser
+    object.
+
+    :return: An ArgumentParser instance with command line arguments stored.
+    :rtype: `ArgumentParser` object
+    """
     parser = argparse.ArgumentParser(
         description="Combine contact timeseries from multiple repeat runs. "
                    "This enables pooling data from multiple trajectory repeats "
@@ -171,6 +176,8 @@ def get_parser():
     return parser
 
 def main():
+    """Execute this function when this script is called from the command line.
+    """
     parser = get_parser()
     args = parser.parse_args()
     

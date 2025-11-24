@@ -1,3 +1,10 @@
+"""
+Map kinetics from gibbs data to md trajectory.
+
+This module provides the `MapKinetics` class, which creates trajectories and
+weighted densities based on the clustered gibbs data and original trajectory.
+"""
+
 from tqdm import tqdm
 from basicrta.util import get_start_stop_frames
 import numpy as np
