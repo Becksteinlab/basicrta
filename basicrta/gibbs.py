@@ -854,11 +854,13 @@ class Gibbs(object):
 def get_parser():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--contacts')
-    parser.add_argument('--resid', type=int)
-    parser.add_argument('--nproc', type=int, default=1)
-    parser.add_argument('--niter', type=int, default=110000)
-    parser.add_argument('--ncomp', type=int, default=15)
+    required = parser.add_argument_group('required arguments')
+    optional = parser.add_argument_group('optional arguments')
+    required.add_argument('--contacts', required=True)
+    optional.add_argument('--resid', type=int)
+    optional.add_argument('--nproc', type=int, default=1)
+    optional.add_argument('--niter', type=int, default=110000)
+    optional.add_argument('--ncomp', type=int, default=15)
     # this is to make the cli work, should be just a temporary solution
     parser.add_argument('gibbs', nargs='?')
     return parser

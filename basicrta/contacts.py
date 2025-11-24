@@ -400,7 +400,7 @@ def get_parser():
     parser.add_argument('--cutoff', type=float, help="""Value to use for defining 
                         a contact (in Angstrom). Any atom of `sel2` that is at
                         a distance less than or equal to `cutoff` of any atom
-                        in `sel1` will be considered in contact.""")
+                        in `sel1` will be considered in contact.""", required=True)
     parser.add_argument('--nproc', type=int, default=1, help="""Number of 
                         processes to use in multiprocessing""")
     parser.add_argument('--nslices', type=int, default=100, help="""Number of 
