@@ -15,12 +15,13 @@ __version__ = version("basicrta")
 commands = ['contacts', 'cluster', 'combine', 'kinetics', 'gibbs']
 
 def main():
-    parser = argparse.ArgumentParser(prog='basicrta', add_help=True)
-    subparsers = parser.add_subparsers()
+    parser = argparse.ArgumentParser(prog='basicrta', add_help=False)
+    subparsers = parser.add_subparsers(help='Step in the basicrta workflow to execute.')
     
     for command in commands:
         subparser = importlib.import_module(f"basicrta.{command}").get_parser()
-        subparsers.add_parser(f'{command}', parents=[subparser], add_help=False)
+        subparsers.add_parser(f'{command}', parents=[subparser, parser], add_help=True,
+                              description=subparser.description, conflict_handler='resolve')
 
     args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 

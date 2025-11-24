@@ -389,12 +389,23 @@ def get_parser():
                                      map and collect contacts based on the \
                                      desired cutoff distance")
     parser.add_argument('--top', type=str, help="Topology")
-    parser.add_argument('--traj', type=str)
-    parser.add_argument('--sel1', type=str)
-    parser.add_argument('--sel2', type=str)
-    parser.add_argument('--cutoff', type=float)
-    parser.add_argument('--nproc', type=int, default=1)
-    parser.add_argument('--nslices', type=int, default=100)
+    parser.add_argument('--traj', type=str, help="Trajectory")
+    parser.add_argument('--sel1', type=str, help="Primary atom selection, based \
+                        on MDAnalysis atom selection. basicrta will produce \
+                        tau for each residue in this atom group.")
+    parser.add_argument('--sel2', type=str, help="Secondary atom selection, \
+                        based on MDAnalysis atom selection. basicrta will \
+                        collect contacts between each residue of this group \
+                        with each residue of `sel1`.")
+    parser.add_argument('--cutoff', type=float, help="""Value to use for defining 
+                        a contact (in Angstrom). Any atom of `sel2` that is at
+                        a distance less than or equal to `cutoff` of any atom
+                        in `sel1` will be considered in contact.""")
+    parser.add_argument('--nproc', type=int, default=1, help="""Number of 
+                        processes to use in multiprocessing""")
+    parser.add_argument('--nslices', type=int, default=100, help="""Number of 
+                        slices to break the trajectory into. Increase this to
+                        reduce the amount of memory needed for each process.""")
     # this is to make the cli work, should be just a temporary solution
     parser.add_argument('contacts', nargs='?')
     return parser
