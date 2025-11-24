@@ -145,11 +145,13 @@ def get_parser():
                    "and calculating posteriors from all data together."
     )
     
-    parser.add_argument(
+    required = parser.add_argument_group('required arguments')
+    required.add_argument(
         '--contacts', 
         nargs='+', 
         required=True,
-        help="List of contact pickle files to combine (e.g., contacts_7.0.pkl from different runs)"
+        help="""List of contact pickle files to combine (e.g., contacts_7.0.pkl
+        from different runs)""",
     )
     
     parser.add_argument(
@@ -165,7 +167,7 @@ def get_parser():
         help="Skip compatibility validation (use with caution)"
     )
     # this is to make the cli work, should be just a temporary solution
-    parser.add_argument('combine', nargs='?')
+    parser.add_argument('combine', nargs='?', help=argparse.SUPPRESS)
     return parser
 
 def main():

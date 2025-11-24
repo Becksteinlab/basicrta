@@ -385,19 +385,21 @@ def main():
 
 def get_parser():
     import argparse
-    parser = argparse.ArgumentParser(description="Create the primary contact \
-                                     map and collect contacts based on the \
-                                     desired cutoff distance")
-    parser.add_argument('--top', type=str, help="Topology")
-    parser.add_argument('--traj', type=str, help="Trajectory")
-    parser.add_argument('--sel1', type=str, help="Primary atom selection, based \
+    parser = argparse.ArgumentParser(description="""Create the initial contact
+                                                 map and process it using a
+                                                 prescribed cutoff""")
+    required = parser.add_argument_group('required arguments')
+
+    required.add_argument('--top', type=str, help="Topology")
+    required.add_argument('--traj', type=str, help="Trajectory")
+    required.add_argument('--sel1', type=str, help="Primary atom selection, based \
                         on MDAnalysis atom selection. basicrta will produce \
                         tau for each residue in this atom group.")
-    parser.add_argument('--sel2', type=str, help="Secondary atom selection, \
+    required.add_argument('--sel2', type=str, help="Secondary atom selection, \
                         based on MDAnalysis atom selection. basicrta will \
                         collect contacts between each residue of this group \
                         with each residue of `sel1`.")
-    parser.add_argument('--cutoff', type=float, help="""Value to use for defining 
+    required.add_argument('--cutoff', type=float, help="""Value to use for defining 
                         a contact (in Angstrom). Any atom of `sel2` that is at
                         a distance less than or equal to `cutoff` of any atom
                         in `sel1` will be considered in contact.""", required=True)
@@ -407,7 +409,7 @@ def get_parser():
                         slices to break the trajectory into. Increase this to
                         reduce the amount of memory needed for each process.""")
     # this is to make the cli work, should be just a temporary solution
-    parser.add_argument('contacts', nargs='?')
+    parser.add_argument('contacts', nargs='?', help=argparse.SUPPRESS)
     return parser
 
 

@@ -853,16 +853,27 @@ class Gibbs(object):
 
 def get_parser():
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="""run gibbs samplers for all
+                                     or a specified residue present in the
+                                     contact map""",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     required = parser.add_argument_group('required arguments')
-    optional = parser.add_argument_group('optional arguments')
-    required.add_argument('--contacts', required=True)
-    optional.add_argument('--resid', type=int)
-    optional.add_argument('--nproc', type=int, default=1)
-    optional.add_argument('--niter', type=int, default=110000)
-    optional.add_argument('--ncomp', type=int, default=15)
+
+    required.add_argument('--contacts', required=True, help="""Contact file
+                          produced from `basicrta contacts`, default is
+                          contacts_{cutoff}.pkl""")
+    parser.add_argument('--resid', type=int, help="""run gibbs sampler for
+                          this residue. Will collect cutoff from contact file
+                          name.""")
+    parser.add_argument('--nproc', type=int, default=1, help="""number of
+                          processes to use in multiprocessing""")
+    parser.add_argument('--niter', type=int, default=110000, help="""number of
+                          iterations to use for the gibbs sampler""")
+    parser.add_argument('--ncomp', type=int, default=15, help="""number of
+                          components to use for the exponential mixture 
+                          model""")
     # this is to make the cli work, should be just a temporary solution
-    parser.add_argument('gibbs', nargs='?')
+    parser.add_argument('gibbs', nargs='?', help=argparse.SUPPRESS)
     return parser
 
 def main():

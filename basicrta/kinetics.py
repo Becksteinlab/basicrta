@@ -205,14 +205,23 @@ class MapKinetics(object):
 
 def get_parser():
     import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--gibbs", type=str)
-    parser.add_argument("--contacts", type=str)
-    parser.add_argument("--top_n", type=int, nargs='?', default=None)
-    parser.add_argument("--step", type=int, nargs='?', default=1)
-    parser.add_argument("--wdensity", action='store_true')
+    parser = argparse.ArgumentParser(description="""map kinetics from clustered
+                                     results onto trajectory, create weighted
+                                     densities if flag is used""")
+    required = parser.add_argument_group('required arguments')
+    required.add_argument("--gibbs", type=str, required=True, help="""gibbs pickle
+                        file to use for creating kinetic trajectories and
+                        densities""")
+    required.add_argument("--contacts", type=str, required=True, help="""contacts
+                        file used in creation of the gibbs sampler data""")
+    parser.add_argument("--top_n", type=int, nargs='?', help="""use the `top_n`
+                        most likely frames to create trajectory or densities""")
+    parser.add_argument("--step", type=int, nargs='?', default=1, help="""write
+                        out frame if frame%%step=0""")
+    parser.add_argument("--wdensity", action='store_true', help="""create
+                        weighted densities""")
     # this is to make the cli work, should be just a temporary solution
-    parser.add_argument('kinetics', nargs='?')
+    parser.add_argument('kinetics', nargs='?', help=argparse.SUPPRESS)
     return parser
 
 def main():
