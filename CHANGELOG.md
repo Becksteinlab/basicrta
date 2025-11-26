@@ -28,7 +28,7 @@ The rules for this file:
   whole proteins.
 
 ### Added
-* Added command-line interface for basicrta workflow
+* Added command-line interface for basicrta workflow (Issue #20)
 
 ## [1.1.3] - 2025-09-11
 
