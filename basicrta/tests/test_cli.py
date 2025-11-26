@@ -58,9 +58,9 @@ class TestCLI:
                                        '--help'])
             assert help_ret.returncode == 0
             
-            # error if required arguments not given
+            # print help if arguments not given
             nohelp = subprocess.run(['python', '-m', 'basicrta.cli'])
-            assert nohelp.returncode == 2
+            assert nohelp.returncode == 0
 
 
 #    def test_call_main_args(self):
