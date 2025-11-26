@@ -9,6 +9,7 @@ import pickle
 import subprocess
 import basicrta.cli
 import importlib
+import argparse
 from basicrta.contacts import CombineContacts
 
 
@@ -41,9 +42,7 @@ class TestCLI:
             nohelp = subprocess.run(['basicrta', f'{module}'])
             assert nohelp.returncode == 0
 
-    def test_get_parser(self):
-        import importlib
-        import argparse
+    def test_get_module_parsers(self):
         for module in self.modules:
             parser = importlib.import_module(f"basicrta.{module}").get_parser()
             assert type(parser) == argparse.ArgumentParser
@@ -53,9 +52,19 @@ class TestCLI:
             with pytest.raises(SystemExit):
                 importlib.import_module(f"basicrta.{module}").main()
 
-#    def test_call_main(self):
-#        
-#        for module in self.modules:
-#            with pytest.raises(SystemExit):
-#                importlib.import_module(f"basicrta.{module}").main()
+    def test_cli_script_call(self):
+            #help successfully printed
+            help_ret = subprocess.run(['python', '-m', 'basicrta.cli', 
+                                       '--help'])
+            assert help_ret.returncode == 0
+            
+            # error if required arguments not given
+            nohelp = subprocess.run(['python', '-m', 'basicrta.cli'])
+            assert nohelp.returncode == 2
+
+
+#    def test_call_main_args(self):
+#        with mock.patch('sys.argv', ['cluster', '--cutoff', '6.9']):
+#            importlib.import_module(f"basicrta.cluster").main()
+
 
