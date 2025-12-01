@@ -62,7 +62,7 @@ class MapContacts(object):
         self.ag1, self.ag2 = ag1, ag2
         self.max_cutoff = max_cutoff
         self.frames, self.nslices = frames, nslices
-        self.contacts_filename = f"contacts_max{self.max_cutoff}.pkl"
+        self.contacts_filename = f"{os.getcwd()}/contacts_max{self.max_cutoff}.pkl"
 
     def run(self):
         """Run contact analysis and save to `contacts_max{max_cutoff}.pkl`
@@ -87,8 +87,8 @@ class MapContacts(object):
         mapsize = sum(lens)
         bounds = np.concatenate([[0], np.cumsum(lens)])
         dtype = np.dtype(np.float64,
-                         metadata={'top': self.u.filename,
-                                   'traj': self.u.trajectory.filename,
+                         metadata={'top': os.path.abspath(self.u.filename),
+                                   'traj': os.path.abspath(self.u.trajectory.filename),
                                    'ag1': self.ag1, 'ag2': self.ag2,
                                    'ts': self.u.trajectory.dt/1000,
                                    'max_cutoff': self.max_cutoff})
@@ -377,7 +377,7 @@ class CombineContacts(object):
 def main():
     parser = get_parser()
     args = parser.parse_args()
-    u = mda.Universe(args.top, args.traj)
+    u = mda.Universe(os.path.abspath(args.top), os.path.abspath(args.traj))
     cutoff, nproc, nslices = args.cutoff, args.nproc, args.nslices
     ag1 = u.select_atoms(args.sel1)
     ag2 = u.select_atoms(args.sel2)

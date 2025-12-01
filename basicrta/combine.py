@@ -9,6 +9,7 @@ trajectory repeats, enabling pooled analysis of binding kinetics.
 
 import os
 import argparse
+import pickle 
 
 class CombineContacts(object):
     """Class to combine contact timeseries from multiple repeat runs.
