@@ -89,7 +89,14 @@ class ProcessProtein(object):
                     else:
                         tau = g.estimate_tau()
                 else:
-                    tau = g.estimate_tau()
+                    # include this in case not reprocessing but processed results
+                    # are not available
+                    try:
+                        tau = g.estimate_tau()
+                    except AttributeError:
+                        result = None
+                        tau = [0, 0, 0]
+
         else:
             # if the pkl files do not exist
             result = None
