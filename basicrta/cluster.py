@@ -1,3 +1,7 @@
+"""This module provides the ProcessProtein class, which collects and processes
+Gibbs sampler data.
+"""
+
 import os
 import gc
 import warnings
@@ -11,9 +15,6 @@ from basicrta import istarmap
 from basicrta.gibbs import Gibbs
 gc.enable()
 
-"""This module provides the ProcessProtein class, which collects and processes
-Gibbs sampler data.
-"""
 
 class ProcessProtein(object):
     r"""ProcessProtein is the class that collects and processes Gibbs sampler
@@ -237,21 +238,30 @@ class ProcessProtein(object):
 
         u.select_atoms('protein').write('tau_bcolored.pdb')
 
-
-if __name__ == "__main__":  #pragma: no cover
-    # the script is tested in the test_cluster.py but cannot be accounted for
-    # in the coverage report
+def get_parser():
     import argparse
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--nproc', type=int, default=1)
-    parser.add_argument('--cutoff', type=float)
-    parser.add_argument('--niter', type=int, default=110000)
-    parser.add_argument('--prot', type=str, default=None, nargs='?')
-    parser.add_argument('--label-cutoff', type=float, default=3,
-            dest='label_cutoff',
-            help='Only label residues with tau > '
-            'LABEL-CUTOFF * <tau>. ')
-    parser.add_argument('--structure', type=str, nargs='?')
+    parser = argparse.ArgumentParser(description="""perform clustering for each
+                                     residue located in basicrta-{cutoff}/""",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    required = parser.add_argument_group('required arguments')
+    
+    required.add_argument('--cutoff', required=True, type=float, help="""cutoff
+                          used in contact analysis, will cluster results in
+                          basicrta-{cutoff}/""")
+    parser.add_argument('--nproc', type=int, default=1, help="""number of
+                        processes to use in multiprocessing""")
+    parser.add_argument('--niter', type=int, default=110000, help="""number of
+                        iterations used in the gibbs sampler, used to load 
+                        gibbs_{niter}.pkl""")
+    parser.add_argument('--prot', type=str, nargs='?', help="""name of protein
+                        in tm_dict.txt, used to draw TM bars in tau vs resid 
+                        plot""")
+    parser.add_argument('--label_cutoff', type=float, default=3,
+                        dest='label_cutoff',
+                        help="""Only label residues with tau > 
+                        LABEL-CUTOFF * <tau>.""")
+    parser.add_argument('--structure', type=str, nargs='?', help="""will add tau
+                        as bfactors to the structure if provided""")
     # use  for default values
     parser.add_argument('--gskip', type=int, default=100, 
                         help='Gibbs skip parameter for decorrelated samples;'
@@ -259,7 +269,12 @@ if __name__ == "__main__":  #pragma: no cover
     parser.add_argument('--burnin', type=int, default=10000, 
                         help='Burn-in parameter, drop first N samples as equilibration;'
                         'default from https://pubs.acs.org/doi/10.1021/acs.jctc.4c01522')
+    # this is to make the cli work, should be just a temporary solution
+    parser.add_argument('cluster', nargs='?', help=argparse.SUPPRESS)
+    return parser
 
+def main():
+    parser = get_parser()
     args = parser.parse_args()
 
     pp = ProcessProtein(args.niter, args.prot, args.cutoff, 
@@ -267,3 +282,10 @@ if __name__ == "__main__":  #pragma: no cover
     pp.reprocess(nproc=args.nproc)
     pp.write_data()
     pp.plot_protein(label_cutoff=args.label_cutoff)
+
+
+if __name__ == "__main__":  #pragma: no cover
+    # the script is tested in the test_cluster.py but cannot be accounted for
+    # in the coverage report
+    exit(main())
+

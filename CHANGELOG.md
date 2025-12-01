@@ -19,12 +19,16 @@ The rules for this file:
 
 ### Authors
 * @orbeckst
+* @rsexton2
 
 ### Fixed
 * Have cluster.ProcessProtein.reprocess() record "no result" if
   the gibbs.Gibbs.process_gibbs() step fails due to insufficient 
   number of samples. Otherwise `python -m cluster` fails to process
   whole proteins.
+
+### Added
+* Added command-line interface for basicrta workflow (Issue #20)
 
 ## [1.1.3] - 2025-09-11
 

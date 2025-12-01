@@ -9,5 +9,6 @@ API Documentation
    contacts
    cluster
    kinetics
+   combine
    util
-
+   cli

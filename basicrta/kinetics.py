@@ -1,3 +1,10 @@
+"""
+Map kinetics from gibbs data to md trajectory.
+
+This module provides the `MapKinetics` class, which creates trajectories and
+weighted densities based on the clustered gibbs data and original trajectory.
+"""
+
 from tqdm import tqdm
 from basicrta.util import get_start_stop_frames
 import numpy as np
@@ -203,16 +210,30 @@ class MapKinetics(object):
 
                 d.results.density.export(outname)
 
-
-if __name__ == "__main__":
-    from basicrta.gibbs import Gibbs
+def get_parser():
     import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--gibbs", type=str)
-    parser.add_argument("--contacts", type=str)
-    parser.add_argument("--top_n", type=int, nargs='?', default=None)
-    parser.add_argument("--step", type=int, nargs='?', default=1)
-    parser.add_argument("--wdensity", action='store_true')
+    parser = argparse.ArgumentParser(description="""map kinetics from clustered
+                                     results onto trajectory, create weighted
+                                     densities if flag is used""")
+    required = parser.add_argument_group('required arguments')
+    required.add_argument("--gibbs", type=str, required=True, help="""gibbs pickle
+                        file to use for creating kinetic trajectories and
+                        densities""")
+    required.add_argument("--contacts", type=str, required=True, help="""contacts
+                        file used in creation of the gibbs sampler data""")
+    parser.add_argument("--top_n", type=int, nargs='?', help="""use the `top_n`
+                        most likely frames to create trajectory or densities""")
+    parser.add_argument("--step", type=int, nargs='?', default=1, help="""write
+                        out frame if frame%%step=0""")
+    parser.add_argument("--wdensity", action='store_true', help="""create
+                        weighted densities""")
+    # this is to make the cli work, should be just a temporary solution
+    parser.add_argument('kinetics', nargs='?', help=argparse.SUPPRESS)
+    return parser
+
+def main():
+    from basicrta.gibbs import Gibbs
+    parser = get_parser()
     args = parser.parse_args()
 
     g = Gibbs().load(args.gibbs)
@@ -220,3 +241,6 @@ if __name__ == "__main__":
     mk.create_traj(top_n=args.top_n)
     if args.wdensity:
         mk.weighted_densities(step=args.step, top_n=args.top_n)
+
+if __name__ == "__main__":
+    exit(main())

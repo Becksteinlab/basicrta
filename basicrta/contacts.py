@@ -1,3 +1,13 @@
+"""
+Create contact maps between two atom groups.
+
+This module provides the `MapContacts` class, which creates the initial contact
+map between the two atom groups using a maximum cutoff (`max_cutoff`), which
+provides for quicker processing if creating results for multiple cutoffs. The 
+`ProcessContacts` class takes the initial contact map and creates the processed
+contact map based on the prescribed cutoff.
+"""
+
 from tqdm import tqdm
 from MDAnalysis.lib import distances
 from multiprocessing import Pool, Lock
@@ -364,23 +374,9 @@ class CombineContacts(object):
         
         return self.output_name
 
-
-if __name__ == '__main__':
-    """DOCSSS
-    """
-    import argparse
-    parser = argparse.ArgumentParser(description="Create the primary contact \
-                                     map and collect contacts based on the \
-                                     desired cutoff distance")
-    parser.add_argument('--top', type=str, help="Topology")
-    parser.add_argument('--traj', type=str)
-    parser.add_argument('--sel1', type=str)
-    parser.add_argument('--sel2', type=str)
-    parser.add_argument('--cutoff', type=float)
-    parser.add_argument('--nproc', type=int, default=1)
-    parser.add_argument('--nslices', type=int, default=100)
+def main():
+    parser = get_parser()
     args = parser.parse_args()
-
     u = mda.Universe(args.top, args.traj)
     cutoff, nproc, nslices = args.cutoff, args.nproc, args.nslices
     ag1 = u.select_atoms(args.sel1)
@@ -395,4 +391,41 @@ if __name__ == '__main__':
         print(f"using existing {mapname}")
 
     ProcessContacts(cutoff, mapname, nproc=nproc).run()
+
+
+def get_parser():
+    import argparse
+    parser = argparse.ArgumentParser(description="""Create the initial contact
+                                                 map and process it using a
+                                                 prescribed cutoff""")
+    required = parser.add_argument_group('required arguments')
+
+    required.add_argument('--top', type=str, help="Topology")
+    required.add_argument('--traj', type=str, help="Trajectory")
+    required.add_argument('--sel1', type=str, help="Primary atom selection, based \
+                        on MDAnalysis atom selection. basicrta will produce \
+                        tau for each residue in this atom group.")
+    required.add_argument('--sel2', type=str, help="Secondary atom selection, \
+                        based on MDAnalysis atom selection. basicrta will \
+                        collect contacts between each residue of this group \
+                        with each residue of `sel1`.")
+    required.add_argument('--cutoff', type=float, help="""Value to use for defining 
+                        a contact (in Angstrom). Any atom of `sel2` that is at
+                        a distance less than or equal to `cutoff` of any atom
+                        in `sel1` will be considered in contact.""", required=True)
+    parser.add_argument('--nproc', type=int, default=1, help="""Number of 
+                        processes to use in multiprocessing""")
+    parser.add_argument('--nslices', type=int, default=100, help="""Number of 
+                        slices to break the trajectory into. Increase this to
+                        reduce the amount of memory needed for each process.""")
+    # this is to make the cli work, should be just a temporary solution
+    parser.add_argument('contacts', nargs='?', help=argparse.SUPPRESS)
+    return parser
+
+
+if __name__ == '__main__':
+    exit(main())
+    """DOCSSS
+    """
+
 

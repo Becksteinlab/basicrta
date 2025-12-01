@@ -1,3 +1,11 @@
+""" 
+Perform Gibbs samplers and process data.
+
+This module provides the `ParallelGibbs` class, which parallelizes the creation
+of Gibbs samplers for each residue in the contact map. This module also provides
+the `Gibbs` class, which allows for the loading and processing of the gibbs
+sampler data, as well as plotting and saving processed results.
+"""
 import os
 import gc
 import pickle
@@ -335,7 +343,7 @@ class Gibbs(object):
         self.processed_results.indicator = pindicator
         self.processed_results.labels = all_labels
 
-    def process_gibbs(self, show=True):
+    def process_gibbs(self, show=False):
         r"""
         Process the samples collected from the Gibbs sampler.
         :meth:`process_gibbs` can be called multiple times to check the
@@ -851,15 +859,33 @@ class Gibbs(object):
                         's_vs_t.pdf', bbox_inches='tight')
         plt.show()
 
-
-if __name__ == '__main__':
+def get_parser():
     import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--contacts')
-    parser.add_argument('--resid', type=int, default=None)
-    parser.add_argument('--nproc', type=int, default=1)
-    parser.add_argument('--niter', type=int, default=110000)
-    parser.add_argument('--ncomp', type=int, default=15)
+    parser = argparse.ArgumentParser(description="""run gibbs samplers for all
+                                     or a specified residue present in the
+                                     contact map""",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    required = parser.add_argument_group('required arguments')
+
+    required.add_argument('--contacts', required=True, help="""Contact file
+                          produced from `basicrta contacts`, default is
+                          contacts_{cutoff}.pkl""")
+    parser.add_argument('--resid', type=int, help="""run gibbs sampler for
+                          this residue. Will collect cutoff from contact file
+                          name.""")
+    parser.add_argument('--nproc', type=int, default=1, help="""number of
+                          processes to use in multiprocessing""")
+    parser.add_argument('--niter', type=int, default=110000, help="""number of
+                          iterations to use for the gibbs sampler""")
+    parser.add_argument('--ncomp', type=int, default=15, help="""number of
+                          components to use for the exponential mixture 
+                          model""")
+    # this is to make the cli work, should be just a temporary solution
+    parser.add_argument('gibbs', nargs='?', help=argparse.SUPPRESS)
+    return parser
+
+def main():
+    parser = get_parser()
     args = parser.parse_args()
 
     contact_path = os.path.abspath(args.contacts)
@@ -867,3 +893,6 @@ if __name__ == '__main__':
 
     ParallelGibbs(contact_path, nproc=args.nproc, ncomp=args.ncomp,
                   niter=args.niter).run(run_resids=args.resid)
+
+if __name__ == '__main__':
+    exit(main())
