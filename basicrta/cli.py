@@ -11,7 +11,7 @@ combine.py.
 """
 
 from importlib.metadata import version
-from basicrta import *
+import basicrta
 import argparse
 import subprocess
 import importlib
