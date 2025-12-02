@@ -36,27 +36,79 @@ class Assess(object):
     """
 
     def __init__(self, contacts, resid=None, niter=110000):
-        self.contacts = contacts
+        self.contact_file = contacts
         self.resid = resid
         self.niter = niter
+        
+        # load contacts file
+        with open(contacts, 'r+b') as f:
+            self.contacts = pickle.load(f)
 
     def collect(self):
-        # load contacts file
-        with open(self.contacts, 'r+b') as f:
-            self._contacts = pickle.load(f)
+        time_sorts = self.contacts[:,-1].argsort()[::-1]
+        inds = np.unique(self.contacts[time_sorts,0], return_index=True)[1]
 
-        time_sorts = contacts[:,-1].argsort()[::-1]
-        inds = np.unique(contacts[time_sorts,0], return_index=True)[1]
-
-        self.longest_resids = contacts[time_sorts, 0][sorted(inds)].astype(int)
-        self.longest_times = contacts[time_sorts, -1][sorted(inds)]
-        self.times = [contacts[contacts[:,0] == resid, -1] for resid in self.longest_resids]
+        self.longest_resids = self.contacts[time_sorts, 0][sorted(inds)].astype(int)
+        self.longest_times = self.contacts[time_sorts, -1][sorted(inds)]
+        self.times = [self.contacts[self.contacts[:,0] == resid, -1] for resid in self.longest_resids]
         self.num_events = np.array([len(time) for time in self.times])
 
-    def get_pose(self, resid):
-        u = MDA.Universe()
-    
+    def get_pose(self, resid, n=0):
+        """Get the average pose for a given resid corresponding to the nth 
+        longest binding event observed. Note: Longest time is index 0, second 
+        longest index 1, etc.
+        """
+        from MDAnalysis.analysis.rms import rmsd
+        from basicrta.util import get_suffix, get_code
+ 
+        top = self.contacts.dtype.metadata['top']
+        traj = self.contacts.dtype.metadata['traj']
+        dt = self.contacts.dtype.metadata['ts']
+        ag1 = self.contacts.dtype.metadata['ag1']
+        ag2 = self.contacts.dtype.metadata['ag2']
+        cutoff = self.contacts.dtype.metadata['cutoff']
 
+        frames, lipid = self._get_longest_nth_time_info(resid, n)
+        ag1_inds = self.contacts.dtype.metadata['ag1'].indices
+        ag2_sel_inds = ag2.select_atoms(f'resid {lipid}').indices
+        
+        u = mda.Universe(f'{top}', f'{traj}')
+        traj_len = len(frames)
+    
+        # redefine selections
+        new_ag1 = u.atoms[ag1_inds]
+        new_ag2 = u.atoms[ag2_sel_inds]
+
+        # get average position
+        positions = 0
+        for i, ts in enumerate(u.trajectory[frames]):
+            positions += new_ag2.positions
+        positions = positions / traj_len
+        
+        # get closest frame to average
+        rmsds = np.empty(traj_len)
+        for i, ts in enumerate(u.trajectory[frames]):
+            rmsds[i] = rmsd(new_ag2.positions, positions)
+        
+        min_index = rmsds.argmin()
+        write_frame = frames[min_index]
+        u.trajectory[write_frame]
+        
+        reslet = get_code(ag1.select_atoms(f'resid {resid}').residue.resname)
+        residue = f'{reslet}{resid}'
+        #outdir = f'basicrta-{cutoff}/{residue}/'
+        out_name = f'{residue}_{n+1}{get_suffix(n+1)}_longest.pdb'
+        (new_ag1 +new_ag2).atoms.write(out_name)
+
+    def _get_longest_nth_time_info(self, resid, n):
+        dt = self.contacts.dtype.metadata['ts']
+        tmp = self.contacts[self.contacts[:,0] == resid] 
+        sorted_tmp = tmp[tmp[:,-1].argsort()[::-1]]
+        start_frame = round(sorted_tmp[n, 2] / dt)
+        end_frame = round(start_frame + sorted_tmp[n, 3] / dt)
+        lipid = int(sorted_tmp[n, 1])
+        return np.array(range(start_frame, end_frame)), lipid 
+    
 def get_parser():
     import argparse
     parser = argparse.ArgumentParser(description="""run gibbs samplers for all
