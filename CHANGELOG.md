@@ -15,7 +15,7 @@ The rules for this file:
     * YYYY-MM-DD date format (following ISO 8601)
   * accompany each entry with github issue/PR number (Issue #xyz)
 -->
-## [1.1.4] - unpublished
+## [1.2.0] - unpublished
 
 ### Authors
 * @orbeckst
