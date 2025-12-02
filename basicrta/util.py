@@ -21,10 +21,20 @@ import warnings
 
 mpl.rcParams['pdf.fonttype'] = 42
 
+def get_suffix(n):
+    last = n % 10
+    if last == 1:
+        suffix = 'st'
+    elif last == 2:
+        suffix = 'nd'
+    elif last == 3:
+        suffix = 'rd'
+    else:
+        suffix = 'th'
+    return suffix
 
 def siground(x, dec):
     return float(f'%.{dec - 1}e' % x)
-
 
 def slice_trajectory(u, nslices):
     if isinstance(u, MDAnalysis.coordinates.base.FrameIteratorSliced):
