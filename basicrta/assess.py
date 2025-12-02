@@ -109,6 +109,11 @@ class Assess(object):
         lipid = int(sorted_tmp[n, 1])
         return np.array(range(start_frame, end_frame)), lipid 
     
+    #def compare_poses(self):
+    #    for resid in self.longest_resids:
+    #        if not os.path.exists()
+    #        self.get_pose(resid)
+
 def get_parser():
     import argparse
     parser = argparse.ArgumentParser(description="""run gibbs samplers for all
