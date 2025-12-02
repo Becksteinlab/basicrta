@@ -94,11 +94,17 @@ class Assess(object):
         write_frame = frames[min_index]
         u.trajectory[write_frame]
         
-        reslet = get_code(ag1.select_atoms(f'resid {resid}').residue.resname)
-        residue = f'{reslet}{resid}'
+        residue = self._get_residue(resid)
         #outdir = f'basicrta-{cutoff}/{residue}/'
         out_name = f'{residue}_{n+1}{get_suffix(n+1)}_longest.pdb'
-        (new_ag1 +new_ag2).atoms.write(out_name)
+        (new_ag1 + new_ag2).atoms.write(out_name)
+
+    def _get_residue(self, resid):
+        from basicrta.util import get_code
+
+        ag1 = self.contacts.dtype.metadata['ag1']
+        reslet = get_code(ag1.select_atoms(f'resid {resid}').resnames[0])
+        return f'{reslet}{resid}'
 
     def _get_longest_nth_time_info(self, resid, n):
         dt = self.contacts.dtype.metadata['ts']
@@ -108,11 +114,60 @@ class Assess(object):
         end_frame = round(start_frame + sorted_tmp[n, 3] / dt)
         lipid = int(sorted_tmp[n, 1])
         return np.array(range(start_frame, end_frame)), lipid 
+   
+    def _get_filename(self, resid, n=0):
+        from basicrta.util import get_suffix
+        residue = self._get_residue(resid)
+        return f'{residue}_{n+1}{get_suffix(n+1)}_longest.pdb'
+
+    def _collect_missing(self, n=0):
+        missing = []
+        for resid in self.longest_resids:
+            filename = self._get_filename(resid, n=n)
+            if not os.path.exists(filename):
+                missing.append(resid)
+        return missing
+ 
+    def _process_missing(self, n=0, nproc=1):
+        from multiprocessing import Pool, Lock
+        from tqdm import tqdm
+
+        missing = self._collect_missing(n=n)
+        nproc = min(len(missing), nproc)
+        with (Pool(nproc, initializer=tqdm.set_lock,
+                   initargs=(Lock(),)) as p):
+            try:
+                for _ in tqdm(p.imap(self.get_pose, missing),
+                              total=len(missing), position=0,
+                              desc='processing missing structures'):
+                    pass
+            except KeyboardInterrupt:
+                pass
     
-    #def compare_poses(self):
-    #    for resid in self.longest_resids:
-    #        if not os.path.exists()
-    #        self.get_pose(resid)
+    def compare_poses(self, n=0, nproc=1):
+        from sklearn import cluster
+        from basicrta.util import get_suffix
+
+        if len(self._collect_missing()) > 0:
+            self._process_missing(n=n, nproc=nproc)
+
+        coms = []
+        princ_axes = []
+        for resid in tqdm(self.longest_resids):
+            residue = self._get_residue(resid)
+            filename = f'{residue}_{n+1}{get_suffix(n+1)}_longest.pdb'
+
+            utemp = mda.Universe(filename)
+            lig = utemp.select_atoms('not protein')
+            coms.append(lig.center_of_mass())
+            princ_axes.append(lig.principal_axes())
+        
+        coms = np.array(coms)
+        princ_axes = np.array(princ_axes)
+        data = np.concatenate([coms, princ_axes.reshape(-1, 9)], axis=1)
+        
+
+
 
 def get_parser():
     import argparse
