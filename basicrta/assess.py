@@ -153,14 +153,19 @@ class Assess(object):
 
         coms = []
         princ_axes = []
-        for resid in tqdm(self.longest_resids):
-            residue = self._get_residue(resid)
-            filename = f'{residue}_{n+1}{get_suffix(n+1)}_longest.pdb'
+        tmp_residue = self._get_residue(self.longest_resids[0])
+        utmp = mda.Universe(f'{tmp_residue}_{n+1}{get_suffix(n+1)}_longest.pdb')
+        with mda.Writer('longest.xtc', len(utmp.atoms)) as w:
+            for resid in tqdm(self.longest_resids):
+                residue = self._get_residue(resid)
+                filename = f'{residue}_{n+1}{get_suffix(n+1)}_longest.pdb'
 
-            utemp = mda.Universe(filename)
-            lig = utemp.select_atoms('not protein')
-            coms.append(lig.center_of_mass())
-            princ_axes.append(lig.principal_axes())
+                utemp = mda.Universe(filename)
+                w.write(utemp.atoms)
+
+                lig = utemp.select_atoms('not protein')
+                coms.append(lig.center_of_mass())
+                princ_axes.append(lig.principal_axes())
         
         coms = np.array(coms)
         princ_axes = np.array(princ_axes)
