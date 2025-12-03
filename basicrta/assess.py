@@ -166,7 +166,15 @@ class Assess(object):
         princ_axes = np.array(princ_axes)
         data = np.concatenate([coms, princ_axes.reshape(-1, 9)], axis=1)
         
+        km = cluster.KMeans(n_clusters=50)
+        km.fit(data)
 
+        plt.plot(km.labels_, a.longest_resids, '.')
+        plt.show()
+
+    def cluster_traj(self):
+        for resid in tqdm(self.longest_resids):
+            pass
 
 
 def get_parser():
