@@ -21,7 +21,7 @@ __version__ = version("basicrta")
 
 # define which scripts can be ran from cli
 # can easily add functionality to cli as modules are added
-commands = ['contacts', 'gibbs', 'cluster', 'combine', 'kinetics']
+commands = ['contacts', 'gibbs', 'cluster', 'combine', 'kinetics', 'assess']
 
 def main():
     """ This module provides the functionality for a command line interface for

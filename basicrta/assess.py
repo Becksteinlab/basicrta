@@ -43,8 +43,7 @@ class Assess(object):
         # load contacts file
         with open(contacts, 'r+b') as f:
             self.contacts = pickle.load(f)
-
-    def collect(self):
+        
         time_sorts = self.contacts[:,-1].argsort()[::-1]
         inds = np.unique(self.contacts[time_sorts,0], return_index=True)[1]
 
@@ -198,19 +197,21 @@ def get_parser():
                           name.""")
     parser.add_argument('--niter', type=int, default=110000, help="""number of
                           iterations to use for the gibbs sampler""")
+    parser.add_argument('--nproc', type=int, default=1, help="""number of
+                          processes to use""")
     # this is to make the cli work, should be just a temporary solution
     parser.add_argument('assses', nargs='?', help=argparse.SUPPRESS)
     return parser
 
 def main():
+    from basicrta.gibbs import ParallelGibbs
     parser = get_parser()
     args = parser.parse_args()
 
     contact_path = os.path.abspath(args.contacts)
     cutoff = args.contacts.split('/')[-1].strip('.pkl').split('_')[-1]
 
-    ParallelGibbs(contact_path, nproc=args.nproc, ncomp=args.ncomp,
-                  niter=args.niter).run(run_resids=args.resid)
+    ParallelGibbs(contact_path, nproc=args.nproc).run()
 
 if __name__ == '__main__':
     exit(main())
