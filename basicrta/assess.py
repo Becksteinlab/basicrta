@@ -207,10 +207,7 @@ def main():
     args = parser.parse_args()
 
     contact_path = os.path.abspath(args.contacts)
-    cutoff = args.contacts.split('/')[-1].strip('.pkl').split('_')[-1]
 
-    ParallelGibbs(contact_path, nproc=args.nproc, ncomp=args.ncomp,
-                  niter=args.niter).run(run_resids=args.resid)
 
 if __name__ == '__main__':
     exit(main())
