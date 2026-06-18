@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - id: get-compatible-python
         uses: MDAnalysis/mdanalysis-compatible-python@main
@@ -54,7 +54,7 @@ jobs:
           mdanalysis-version: ["latest"]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Build information
       run: |
@@ -65,7 +65,7 @@ jobs:
 
     # More info on options: https://github.com/conda-incubator/setup-miniconda
     - name: Install conda dependencies
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4
       with:
         python-version: ${{ matrix.python-version }}
         environment-file: devtools/conda-envs/test_env.yaml
@@ -77,7 +77,7 @@ jobs:
 
         activate-environment: basicrta-test
         auto-update-conda: true
-        auto-activate-base: false
+        auto-activate: false
         show-channel-urls: true
 
 
